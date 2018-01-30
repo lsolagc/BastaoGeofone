@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="br.com.gasi.bastogeofone.MainActivity"
+    tools:showIn="@layout/app_bar_main">
+
+    <TextView
+        android:id="@+id/tv_welcomeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="36dp"
+        android:text="@string/mainActivity_welcomeText"
+        android:textSize="36sp" />
+
+    <TextView
+        android:id="@+id/tv_welcomeSubText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_welcomeText"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:text="@string/mainActivity_welcomeSubText"
+        android:textSize="@dimen/welcomeSubTextSize" />
+
+    <TextView
+        android:id="@+id/tv_startingGuide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_welcomeSubText"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="165dp"
+        android:text="@string/mainActivity_startingGuide"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/button_enableBT"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tv_startingGuide"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="94dp"
+        android:padding="@dimen/button_padding"
+        android:text="@string/buttonEnableBluetooth"
+        android:textSize="18sp" />
+
+</RelativeLayout>

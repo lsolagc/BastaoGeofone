@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="br.com.gasi.bastogeofone.MainActivity"
+    android:id="@+id/container_novainsp">
+
+
+    <TextView
+        android:id="@+id/tv_nomeInspecao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="@dimen/marginStartDefault"
+        android:layout_marginTop="@dimen/marginTopDefault"
+        android:text="@string/nomeNovaInspecao"
+        android:textSize="@dimen/textDefaultSize"
+        android:visibility="visible" />
+
+    <EditText
+        android:id="@+id/editText_nomeInspecao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignTop="@+id/tv_nomeInspecao"
+        android:layout_marginEnd="@dimen/marginEndDefault"
+        android:layout_marginStart="@dimen/marginFormStart"
+        android:layout_toEndOf="@+id/tv_nomeInspecao"
+        android:defaultFocusHighlightEnabled="false"
+        android:ems="10"
+        android:focusedByDefault="false"
+        android:inputType="textPersonName"
+        android:labelFor="@+id/tv_nomeInspecao"
+        android:tooltipText="@string/nomeNovaInspecao" />
+
+    <TextView
+        android:id="@+id/tv_enderecoInspecao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/tv_nomeInspecao"
+        android:layout_below="@+id/editText_nomeInspecao"
+        android:layout_marginTop="@dimen/marginTopDefault"
+        android:text="@string/enderecoInspecao"
+        android:textSize="@dimen/textDefaultSize" />
+
+    <EditText
+        android:id="@+id/editText_enderecoInspecao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/tv_enderecoInspecao"
+        android:layout_alignBottom="@+id/tv_enderecoInspecao"
+        android:layout_alignEnd="@+id/editText_nomeInspecao"
+        android:layout_alignStart="@+id/editText_nomeInspecao"
+        android:ems="10"
+        android:inputType="textPersonName" />
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:map="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/map1"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/button_iniciarInspecao"
+        android:layout_alignEnd="@+id/editText_enderecoInspecao"
+        android:layout_alignStart="@+id/tv_enderecoInspecao"
+        android:layout_below="@+id/editText_enderecoInspecao"
+        android:layout_marginBottom="@dimen/marginBottomDefault"
+        android:layout_marginTop="@dimen/marginTopDefault"
+        tools:context="br.com.gasi.bastogeofone.MapsActivity" />
+
+    <Button
+        android:id="@+id/button_iniciarInspecao"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/marginBottomDefault"
+        android:text="@string/iniciarInspecao"
+        android:textSize="18sp" />
+
+
+</RelativeLayout>

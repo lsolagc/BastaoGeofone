@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="welcomeTextSize">36sp</dimen>
+    <dimen name="welcomeSubTextSize">40sp</dimen>
+    <dimen name="button_padding">16dp</dimen>
+    <dimen name="textDefaultSize">30sp</dimen>
+    <dimen name="marginStartDefault">36dp</dimen>
+    <dimen name="marginTopDefault">24dp</dimen>
+    <dimen name="marginFormStart">104dp</dimen>
+    <dimen name="marginEndDefault">36dp</dimen>
+    <dimen name="marginBottomDefault">24dp</dimen>
+
+
+</resources>

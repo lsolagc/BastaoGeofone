@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Bastão Geofone</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="mainActivity_welcomeText">Bem-vindo ao</string>
+    <string name="mainActivity_welcomeSubText">App Bastão Geofone</string>
+    <string name="mainActivity_startingGuide">Para começar, ative o Bluetooth e, no menu lateral, selecione a opção \"Nova Inspeção\"</string>
+    <string name="buttonEnableBluetooth">Ativar Bluetooth</string>
+    <string name="noBTSupport">Seu aparelho não suporta Bluetooth. Fechando aplicativo...</string>
+    <string name="BTAlreadyOn">Bluetooth já está ativado</string>
+    <string name="navNovaInspecao">Nova Inspeção</string>
+    <string name="nav_historicoInspecao">Histórico de Inspeções</string>
+
+    <string name="nomeNovaInspecao">Nome da inspeção</string>
+    <string name="AlertGPSoff">A Localização do dispositivo está desligada. Deseja ligá-la?</string>
+    <string name="AlertYes">Sim</string>
+    <string name="AlertNo">Não</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="enderecoInspecao">Endereço da inspeção</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="iniciarInspecao">Iniciar Inspeção</string>
+    <string name="labelStatusInspecao">Status da inspeção:</string>
+    <string name="inspStatusRunning">Em andamento</string>
+</resources>
