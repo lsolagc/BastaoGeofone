@@ -40,6 +40,7 @@ import java.util.Locale;
 public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
 
     GoogleMap mGoogleMap;
+    CanvasDrawing mCanvasDrawing;
 
     private final String TAG = this.getClass().getSimpleName();
 
@@ -61,10 +62,10 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         super.onViewCreated(view, savedInstanceState);
 
         List<PointOfInterest> poi = generatePoi();
-        ListView listView = getView().findViewById(R.id.listview_poi);
-        ArrayAdapter<PointOfInterest> adapter = new ArrayAdapter<>(this.getContext(),android.R.layout.simple_list_item_1, poi);
+//        ListView listView = getView().findViewById(R.id.listview_poi);
+//        ArrayAdapter<PointOfInterest> adapter = new ArrayAdapter<>(this.getContext(),android.R.layout.simple_list_item_1, poi);
         //Log.i(TAG, "onViewCreated: poi: "+poi);
-        listView.setAdapter(adapter);
+//        listView.setAdapter(adapter);
 
         SupportMapFragment supportMapFragment = (SupportMapFragment)getChildFragmentManager().findFragmentById(R.id.map2);
         //Log.i(TAG, "onCreateView: supportMapFragment: "+supportMapFragment);
@@ -72,7 +73,9 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
 
         TextView tv_status = getView().findViewById(R.id.tv_statusInspecao);
         tv_status.setText(R.string.inspStatusRunning);
-        //teste
+
+        mCanvasDrawing = getView().findViewById(R.id.canvas);
+        //mCanvasDrawing.draw("rect",0,0);
 
     }
 

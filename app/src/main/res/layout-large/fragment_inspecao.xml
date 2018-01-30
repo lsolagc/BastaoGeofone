@@ -18,18 +18,19 @@
         android:id="@+id/tv_statusInspecao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/listview_poi"
-        android:layout_alignEnd="@+id/listview_poi"
+        android:layout_above="@+id/canvas"
+        android:layout_alignEnd="@+id/canvas"
         android:textSize="@dimen/textDefaultSize" />
 
-    <ListView
-        android:id="@+id/listview_poi"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignStart="@+id/tv_labelStatusInspecao"
+    <br.com.gasi.bastogeofone.CanvasDrawing
+        android:id="@+id/canvas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="false"
         android:layout_below="@+id/tv_labelStatusInspecao"
-        android:layout_marginBottom="600dp"
+        android:layout_marginBottom="536dp"
         android:layout_marginEnd="@dimen/marginEndDefault"
+        android:layout_marginStart="@dimen/marginStartDefault"
         android:layout_marginTop="@dimen/marginTopDefault" />
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
@@ -39,11 +40,10 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/listview_poi"
-        android:layout_alignStart="@+id/listview_poi"
-        android:layout_alignTop="@+id/listview_poi"
-        android:layout_below="@+id/listview_poi"
+        android:layout_alignEnd="@+id/canvas"
+        android:layout_alignStart="@+id/canvas"
+        android:layout_alignTop="@+id/canvas"
         android:layout_marginBottom="@dimen/marginBottomDefault"
-        android:layout_marginTop="550dp"
+        android:layout_marginTop="536dp"
         tools:context="br.com.gasi.bastogeofone.MapsActivity" />
 </RelativeLayout>
