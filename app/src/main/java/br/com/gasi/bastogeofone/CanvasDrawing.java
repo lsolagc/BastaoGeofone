@@ -71,11 +71,6 @@ public class CanvasDrawing extends View {
                 points) {
             canvas.drawRect(rect, mPaint);
         }
-        //drawRect(mRect, canvas, 200);
-        /*
-        Log.i(TAG, "onDraw: Canvas Width: "+canvas.getWidth());;
-        Log.i(TAG, "onDraw: Canvas Height: "+canvas.getHeight());
-        */
     }
 
     private void init(@Nullable AttributeSet attributeSet){
@@ -90,27 +85,11 @@ public class CanvasDrawing extends View {
             top = centerY-(SQUARE_SIZE/2);
             bottom = top + SQUARE_SIZE;
             right = left + SQUARE_SIZE;
+            points.add(new Rect(left, top, right, bottom));
+            Log.i(TAG, "drawPoint: left, top, right, bottom: "+left+","+top+","+right+","+bottom);
+            postInvalidate();
         }
-        /*
-        else{
-            if(points.get(points.size()-1).right > width){
-                top = points.get(points.size()-1).bottom + PADDING;
-                bottom = top + SQUARE_SIZE;
-                left = PADDING;
-                right = left+SQUARE_SIZE;
-            }
-            else{
-                top = points.get(points.size()-1).top;
-                left = points.get(points.size()-1).right + PADDING;
-                bottom = top + SQUARE_SIZE;
-                right = left + SQUARE_SIZE;
-            }
-        }
-        */
         first = false;
-        points.add(new Rect(left, top, right, bottom));
-        Log.i(TAG, "drawPoint: left, top, right, bottom: "+left+","+top+","+right+","+bottom);
-        postInvalidate();
     }
 
     public void move(int direction){
