@@ -45,5 +45,83 @@
         android:layout_alignTop="@+id/canvas"
         android:layout_marginBottom="@dimen/marginBottomDefault"
         android:layout_marginTop="536dp"
+        android:layout_above="@id/button_novoPonto"
         tools:context="br.com.gasi.bastogeofone.MapsActivity" />
+
+    <Button
+        android:id="@+id/button_novoPonto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/marginBottomDefault"
+        android:text="centro"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/left"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/button_novoPonto"
+        android:layout_alignBottom="@+id/button_novoPonto"
+        android:layout_alignParentStart="true"
+        android:text="LEFT" />
+
+    <Button
+        android:id="@+id/upleft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/map2"
+        android:layout_toEndOf="@+id/left"
+        android:text="upleft" />
+
+    <Button
+        android:id="@+id/up"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/button_novoPonto"
+        android:layout_alignBottom="@+id/button_novoPonto"
+        android:layout_toEndOf="@+id/upleft"
+        android:text="up" />
+
+    <Button
+        android:id="@+id/upright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/map2"
+        android:layout_toStartOf="@+id/button_novoPonto"
+        android:text="upright" />
+
+    <Button
+        android:id="@+id/right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/up"
+        android:layout_toEndOf="@+id/button_novoPonto"
+        android:text="right" />
+
+    <Button
+        android:id="@+id/downright"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/right"
+        android:layout_toEndOf="@+id/right"
+        android:text="downright" />
+
+    <Button
+        android:id="@+id/down"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/downright"
+        android:layout_toEndOf="@+id/downright"
+        android:text="down" />
+
+    <Button
+        android:id="@+id/downleft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/map2"
+        android:layout_toEndOf="@+id/down"
+        android:text="downleft" />
+
 </RelativeLayout>

@@ -10,7 +10,10 @@ import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+
+import java.util.ArrayList;
 
 /**
  * Created by Resende on 30/01/2018.
@@ -18,9 +21,24 @@ import android.view.View;
 
 public class CanvasDrawing extends View {
 
+    private static final String TAG = CanvasDrawing.class.getSimpleName();
     private Paint mPaint;
     private Canvas mCanvas;
-    private Rect mRect;
+    private Rect newRect, oldRect;
+    private ArrayList<Rect> points = new ArrayList<>();
+    private final int SQUARE_SIZE = 10;
+    private final int PADDING = 2;
+    private int left, top, right, bottom, width, centerX, centerY;
+    private boolean first = true;
+    public static final int LEFT = 801;
+    public static final int UPLEFT = 802;
+    public static final int UP = 803;
+    public static final int UPRIGHT = 804;
+    public static final int RIGHT = 805;
+    public static final int DOWNRIGHT = 806;
+    public static final int DOWN = 807;
+    public static final int DOWNLEFT = 808;
+
 
     public CanvasDrawing(Context context) {
         super(context);
@@ -46,33 +64,99 @@ public class CanvasDrawing extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        mCanvas = canvas;
-        mRect = new Rect();
-        mRect.bottom = 20;
-        mRect.right = 20;
-        mRect.left = 10;
-        mRect.top = 10;
-        canvas.drawRect(mRect, mPaint);
-        for(int i=0;i<5;i++){
-            Rect mmRect = mRect;
-            mmRect.left = mRect.right+2;
-            canvas.drawRect(mmRect, mPaint);
-            postInvalidate();
+        width = canvas.getWidth();
+        centerX = width/2;
+        centerY = canvas.getHeight()/2;
+        for (Rect rect :
+                points) {
+            canvas.drawRect(rect, mPaint);
         }
+        //drawRect(mRect, canvas, 200);
+        /*
+        Log.i(TAG, "onDraw: Canvas Width: "+canvas.getWidth());;
+        Log.i(TAG, "onDraw: Canvas Height: "+canvas.getHeight());
+        */
     }
 
     private void init(@Nullable AttributeSet attributeSet){
         mPaint = new Paint();
         mPaint.setColor(Color.GREEN);
+        newRect = new Rect();
     }
 
-    public void draw(String figure, float x, float y){
-        figure = figure.toLowerCase();
-        switch (figure){
-            case "rect":
+    public void drawPoint(){
+        if(first){
+            left = centerX-(SQUARE_SIZE/2);
+            top = centerY-(SQUARE_SIZE/2);
+            bottom = top + SQUARE_SIZE;
+            right = left + SQUARE_SIZE;
+        }
+        /*
+        else{
+            if(points.get(points.size()-1).right > width){
+                top = points.get(points.size()-1).bottom + PADDING;
+                bottom = top + SQUARE_SIZE;
+                left = PADDING;
+                right = left+SQUARE_SIZE;
+            }
+            else{
+                top = points.get(points.size()-1).top;
+                left = points.get(points.size()-1).right + PADDING;
+                bottom = top + SQUARE_SIZE;
+                right = left + SQUARE_SIZE;
+            }
+        }
+        */
+        first = false;
+        points.add(new Rect(left, top, right, bottom));
+        Log.i(TAG, "drawPoint: left, top, right, bottom: "+left+","+top+","+right+","+bottom);
+        postInvalidate();
+    }
+
+    public void move(int direction){
+        Rect mRect = new Rect(points.get(points.size()-1));
+        int dx, dy;
+        switch (direction){
+            case LEFT:
+                dx = -PADDING-SQUARE_SIZE;
+                dy = 0;
+                break;
+            case UPLEFT:
+                dx = -PADDING-SQUARE_SIZE;
+                dy = -PADDING-SQUARE_SIZE;
+                break;
+            case UP:
+                dx = 0;
+                dy = -PADDING-SQUARE_SIZE;
+                break;
+            case UPRIGHT:
+                dx = PADDING+SQUARE_SIZE;
+                dy = -PADDING-SQUARE_SIZE;
+                break;
+            case RIGHT:
+                dx = PADDING+SQUARE_SIZE;
+                dy = 0;
+                break;
+            case DOWNRIGHT:
+                dx = PADDING+SQUARE_SIZE;
+                dy = PADDING+SQUARE_SIZE;
+                break;
+            case DOWN:
+                dx = 0;
+                dy = PADDING+SQUARE_SIZE;
+                break;
+            case DOWNLEFT:
+                dx  = -PADDING-SQUARE_SIZE;
+                dy = PADDING+SQUARE_SIZE;
                 break;
             default:
+                dx = 0;
+                dy = 0;
                 break;
         }
+        mRect.offset(dx,dy);
+        points.add(mRect);
+        postInvalidate();
     }
+
 }

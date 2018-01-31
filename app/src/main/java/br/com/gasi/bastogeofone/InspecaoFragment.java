@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -75,7 +76,80 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         tv_status.setText(R.string.inspStatusRunning);
 
         mCanvasDrawing = getView().findViewById(R.id.canvas);
-        //mCanvasDrawing.draw("rect",0,0);
+        // mCanvasDrawing.draw("rect",0,0);
+        Button addPoint = getView().findViewById(R.id.button_novoPonto);
+        addPoint.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.drawPoint();
+            }
+        });
+
+        Button up = getView().findViewById(R.id.up);
+        Button down = getView().findViewById(R.id.down);
+        Button left = getView().findViewById(R.id.left);
+        Button right = getView().findViewById(R.id.right);
+        Button upleft = getView().findViewById(R.id.upleft);
+        Button upright = getView().findViewById(R.id.upright);
+        Button downleft = getView().findViewById(R.id.downleft);
+        Button downright = getView().findViewById(R.id.downright);
+
+        up.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.UP);
+            }
+        });
+
+        down.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.DOWN);
+            }
+        });
+
+        left.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.LEFT);
+            }
+        });
+
+        right.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.RIGHT);
+            }
+        });
+
+        upleft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.UPLEFT);
+            }
+        });
+
+        upright.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
+            }
+        });
+
+        downleft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
+            }
+        });
+
+        downright.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
+            }
+        });
+
 
     }
 
