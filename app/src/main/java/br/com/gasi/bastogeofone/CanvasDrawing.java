@@ -64,9 +64,19 @@ public class CanvasDrawing extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        mCanvas = canvas;
         width = canvas.getWidth();
         centerX = width/2;
         centerY = canvas.getHeight()/2;
+        if(first){
+            left = centerX-(SQUARE_SIZE/2);
+            top = centerY-(SQUARE_SIZE/2);
+            bottom = top + SQUARE_SIZE;
+            right = left + SQUARE_SIZE;
+            points.add(new Rect(left, top, right, bottom));
+            Log.i(TAG, "drawPoint: left, top, right, bottom: "+left+","+top+","+right+","+bottom);
+            first = false;
+        }
         for (Rect rect :
                 points) {
             canvas.drawRect(rect, mPaint);
@@ -79,7 +89,7 @@ public class CanvasDrawing extends View {
         newRect = new Rect();
     }
 
-    public void drawPoint(){
+    public void drawCenterPoint(){
         if(first){
             left = centerX-(SQUARE_SIZE/2);
             top = centerY-(SQUARE_SIZE/2);
@@ -134,8 +144,12 @@ public class CanvasDrawing extends View {
                 break;
         }
         mRect.offset(dx,dy);
-        points.add(mRect);
-        postInvalidate();
+        if (mRect.left < 0 || mRect.top < 0 || mRect.bottom > mCanvas.getHeight() || mRect.right > mCanvas.getWidth()) {
+            return;
+        }else{
+            points.add(mRect);
+            postInvalidate();
+        }
     }
 
 }

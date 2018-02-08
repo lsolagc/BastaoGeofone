@@ -1,13 +1,16 @@
 package br.com.gasi.bastogeofone;
 
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
@@ -97,14 +100,14 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        Log.i(TAG, "onCreate: getView(): "+getView());
-        Button btn_iniciarInspecao = (Button)getView().findViewById(R.id.button_iniciarInspecao);
+        Log.i(TAG, "onCreate: getView(): " + getView());
+        Button btn_iniciarInspecao = (Button) getView().findViewById(R.id.button_iniciarInspecao);
         btn_iniciarInspecao.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 FragmentManager fm = getActivity().getSupportFragmentManager();
                 try {
-                    fm.beginTransaction().addToBackStack(null).replace(R.id.flContent,InspecaoFragment.class.newInstance()).commit();
+                    fm.beginTransaction().addToBackStack(null).replace(R.id.flContent, InspecaoFragment.class.newInstance()).commit();
                 } catch (java.lang.InstantiationException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
@@ -120,8 +123,8 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
         // Inflate the layout for this fragment
         rootView = inflater.inflate(R.layout.fragment_nova_inspecao, container, false);
 
-        SupportMapFragment supportMapFragment = (SupportMapFragment)getChildFragmentManager().findFragmentById(R.id.map1);
-        Log.i(TAG, "onCreateView: supportMapFragment: "+supportMapFragment);
+        SupportMapFragment supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map1);
+        Log.i(TAG, "onCreateView: supportMapFragment: " + supportMapFragment);
         supportMapFragment.getMapAsync(this);
 
         return rootView;
@@ -152,12 +155,12 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
                                 Log.i(TAG, "onSuccess: Admin: "+addresses.get(0).getAdminArea());
                                 Log.i(TAG, "onSuccess: SubAdmin: "+addresses.get(0).getSubAdminArea());
                                 */
-                                String inspecaoName = "Inspecao em "+addresses.get(0).getThoroughfare()+","+addresses.get(0).getSubThoroughfare()+"-"+addresses.get(0).getSubAdminArea();
-                                EditText nomeInspecao = (EditText)getView().findViewById(R.id.editText_nomeInspecao);
-                                EditText enderecoInspecao = (EditText)getView().findViewById(R.id.editText_enderecoInspecao);
+                                String inspecaoName = "Inspecao em " + addresses.get(0).getThoroughfare() + "," + addresses.get(0).getSubThoroughfare() + "-" + addresses.get(0).getSubAdminArea();
+                                EditText nomeInspecao = (EditText) getView().findViewById(R.id.editText_nomeInspecao);
+                                EditText enderecoInspecao = (EditText) getView().findViewById(R.id.editText_enderecoInspecao);
                                 nomeInspecao.setText(inspecaoName);
                                 enderecoInspecao.setText(addresses.get(0).getAddressLine(0));
-                                LatLng currentLocale = new LatLng(location.getLatitude(),location.getLongitude());
+                                LatLng currentLocale = new LatLng(location.getLatitude(), location.getLongitude());
                                 googleMap.addMarker(new MarkerOptions().position(currentLocale).title("Localização atual"));
                                 CameraPosition cameraPosition = CameraPosition.builder().target(currentLocale).zoom(20).tilt(45).build();
                                 googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
