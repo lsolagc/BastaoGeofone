@@ -30,7 +30,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -59,13 +61,16 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
     long minTime = 500, minDistance = 1;
     Marker marker;
     Location currentLocation, lastLocation;
+    FusedLocationProviderClient mFusedLocationClient;
+    SettingsClient mSettingsClient;
+    LocationRequest mLocationRequest;
 
     private final String TAG = this.getClass().getSimpleName();
     private final LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(Location location) {
             currentLocation = location;
-            Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
             LatLng locale = new LatLng(location.getLatitude(),location.getLongitude());
             marker.remove();
             marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
@@ -106,44 +111,36 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             angle = angle-360;
         }
         double disp = Math.hypot(deltax,deltay);
-        Toast.makeText(getContext(), "Mod: "+disp+";Ang: "+angle, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(getContext(), "Mod: "+disp+";Ang: "+angle, Toast.LENGTH_SHORT).show();
         if(angle>=337.5 || angle<22.5){
-            //TODO: Move right
             Toast.makeText(getContext(), "Right", Toast.LENGTH_SHORT).show();
             mCanvasDrawing.move(CanvasDrawing.RIGHT);
         }else{
             if(angle>=22.5 && angle<67.5){
-                //TODO: Move upright
                 Toast.makeText(getContext(), "Upright", Toast.LENGTH_SHORT).show();
                 mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
             }else{
                 if(angle>=67.5 && angle<112.5){
-                    //TODO: Move up
                     Toast.makeText(getContext(), "Up", Toast.LENGTH_SHORT).show();
                     mCanvasDrawing.move(CanvasDrawing.UP);
                 }else{
                     if(angle>=112.5 && angle<157.5){
-                        //TODO: Move upleft
                         Toast.makeText(getContext(), "Upleft", Toast.LENGTH_SHORT).show();
                         mCanvasDrawing.move(CanvasDrawing.UPLEFT);
                     }else{
                         if(angle>=157.5 && angle<202.5){
-                            //TODO: Move left
                             Toast.makeText(getContext(), "Left", Toast.LENGTH_SHORT).show();
                             mCanvasDrawing.move(CanvasDrawing.LEFT);
                         }else{
                             if(angle>=202.5 && angle<247.5){
-                                //TODO: Move downleft
                                 Toast.makeText(getContext(), "Downleft", Toast.LENGTH_SHORT).show();
                                 mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
                             }else{
                                 if(angle>=247.5 && angle<292.5){
-                                    //TODO: Move down
                                     Toast.makeText(getContext(), "Down", Toast.LENGTH_SHORT).show();
                                     mCanvasDrawing.move(CanvasDrawing.DOWN);
                                 }else{
                                     if(angle>=292.5 && angle<337.5){
-                                        //TODO: Move downright
                                         Toast.makeText(getContext(), "Downright", Toast.LENGTH_SHORT).show();
                                         mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
                                     }
@@ -306,7 +303,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         mGoogleMap = googleMap;
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         /*
-        FusedLocationProviderClient mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this.getContext());
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this.getContext());
         mFusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this.getActivity(), new OnSuccessListener<Location>() {
                     @Override
@@ -318,10 +315,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
                             mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
                             CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
                             mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
+                            currentLocation = location;
+                            lastLocation = location;
                         }
                     }
                 });
         */
+
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
         if (location != null) {
             // Logic to handle location object
@@ -332,6 +332,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             currentLocation = location;
             lastLocation = location;
         }
+
     }
 
 }

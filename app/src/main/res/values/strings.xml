@@ -20,12 +20,11 @@
     <string name="AlertGPSoff">A Localização do dispositivo está desligada. Deseja ligá-la?</string>
     <string name="AlertYes">Sim</string>
     <string name="AlertNo">Não</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="enderecoInspecao">Endereço da inspeção</string>
     <string name="title_activity_maps">Map</string>
     <string name="iniciarInspecao">Iniciar Inspeção</string>
     <string name="labelStatusInspecao">Status da inspeção:</string>
     <string name="inspStatusRunning">Em andamento</string>
+    <string name="BTStatusLabel">Status do Bluetooth:</string>
+    <string name="BTStatusConnected">Conectado</string>
 </resources>

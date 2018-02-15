@@ -18,8 +18,8 @@
         android:id="@+id/tv_statusInspecao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/canvas"
-        android:layout_alignEnd="@+id/canvas"
+        android:layout_above="@+id/tv_labelStatusBt"
+        android:layout_toEndOf="@+id/upright"
         android:textSize="@dimen/textDefaultSize" />
 
     <br.com.gasi.bastogeofone.CanvasDrawing
@@ -27,7 +27,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="false"
-        android:layout_below="@+id/tv_labelStatusInspecao"
+        android:layout_below="@id/tv_labelStatusBt"
         android:layout_marginBottom="536dp"
         android:layout_marginEnd="@dimen/marginEndDefault"
         android:layout_marginStart="@dimen/marginStartDefault"
@@ -123,5 +123,23 @@
         android:layout_below="@+id/map2"
         android:layout_toEndOf="@+id/down"
         android:text="downleft" />
+
+    <TextView
+        android:id="@+id/tv_labelStatusBt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignStart="@+id/canvas"
+        android:layout_below="@+id/tv_labelStatusInspecao"
+        android:layout_marginTop="@dimen/marginTopDefault"
+        android:text="@string/BTStatusLabel"
+        android:textSize="@dimen/textDefaultSize" />
+
+    <TextView
+        android:id="@+id/tv_statusBt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/tv_labelStatusBt"
+        android:layout_alignEnd="@+id/tv_statusInspecao"
+        android:textSize="@dimen/textDefaultSize" />
 
 </RelativeLayout>

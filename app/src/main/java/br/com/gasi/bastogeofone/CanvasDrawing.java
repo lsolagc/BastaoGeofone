@@ -12,8 +12,10 @@ import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Created by Resende on 30/01/2018.
@@ -24,12 +26,16 @@ public class CanvasDrawing extends View {
     private static final String TAG = CanvasDrawing.class.getSimpleName();
     private Paint mPaint;
     private Canvas mCanvas;
-    private Rect newRect, oldRect;
+    //private Rect newRect, oldRect;
     private ArrayList<Rect> points = new ArrayList<>();
+    private ArrayList<Paint> paints = new ArrayList<>();
     private final int SQUARE_SIZE = 10;
     private final int PADDING = 2;
     private int left, top, right, bottom, width, centerX, centerY;
     private boolean first = true;
+    private int receivedIntensity;
+
+    //Class constants
     public static final int LEFT = 801;
     public static final int UPLEFT = 802;
     public static final int UP = 803;
@@ -38,6 +44,9 @@ public class CanvasDrawing extends View {
     public static final int DOWNRIGHT = 806;
     public static final int DOWN = 807;
     public static final int DOWNLEFT = 808;
+
+    public static final int WARNING_THRESHOLD = 100;
+    public static final int DANGER_THRESHOLD = 500;
 
 
     public CanvasDrawing(Context context) {
@@ -74,19 +83,18 @@ public class CanvasDrawing extends View {
             bottom = top + SQUARE_SIZE;
             right = left + SQUARE_SIZE;
             points.add(new Rect(left, top, right, bottom));
+            paints.add(setColor());
             Log.i(TAG, "drawPoint: left, top, right, bottom: "+left+","+top+","+right+","+bottom);
             first = false;
         }
         for (Rect rect :
                 points) {
-            canvas.drawRect(rect, mPaint);
+            canvas.drawRect(rect, paints.get(points.indexOf(rect)));
         }
     }
 
     private void init(@Nullable AttributeSet attributeSet){
-        mPaint = new Paint();
-        mPaint.setColor(Color.GREEN);
-        newRect = new Rect();
+        //newRect = new Rect();
     }
 
     public void drawCenterPoint(){
@@ -148,8 +156,43 @@ public class CanvasDrawing extends View {
             return;
         }else{
             points.add(mRect);
+            paints.add(setColor());
             postInvalidate();
         }
+    }
+
+    private Paint setColor() {
+        Paint mmPaint = new Paint();
+        dummyReceiveValue();
+        if(receivedIntensity<WARNING_THRESHOLD){
+            Toast.makeText(getContext(), "Okay", Toast.LENGTH_SHORT).show();
+            mmPaint.setColor(Color.rgb(57,239,57));
+            return mmPaint;
+        }
+        else{
+            if(receivedIntensity > WARNING_THRESHOLD && receivedIntensity < DANGER_THRESHOLD){
+                Toast.makeText(getContext(), "Warning", Toast.LENGTH_SHORT).show();
+                mmPaint.setColor(Color.rgb(255,255,57));
+                return mmPaint;
+            }
+            else{
+                if(receivedIntensity > DANGER_THRESHOLD) {
+                    Toast.makeText(getContext(), "Danger", Toast.LENGTH_SHORT).show();
+                    mmPaint.setColor(Color.rgb(255,57,57));
+                    return mmPaint;
+                }
+                else{
+                    Toast.makeText(getContext(), "Invalid Value Received", Toast.LENGTH_SHORT).show();
+                    Log.w(TAG, "setColor: invalid value received");
+                    return null;
+                }
+            }
+        }
+    }
+
+    private void dummyReceiveValue() {
+        Random r = new Random();
+        receivedIntensity = r.nextInt();
     }
 
 }
