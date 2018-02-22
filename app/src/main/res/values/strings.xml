@@ -27,4 +27,5 @@
     <string name="inspStatusRunning">Em andamento</string>
     <string name="BTStatusLabel">Status do Bluetooth:</string>
     <string name="BTStatusConnected">Conectado</string>
+    <string name="dispBTencontrados">Dispositivos Bluetooth encontrados</string>
 </resources>

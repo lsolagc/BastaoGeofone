@@ -2,6 +2,7 @@ package br.com.gasi.bastogeofone;
 
 
 import android.Manifest;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -64,6 +65,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
     FusedLocationProviderClient mFusedLocationClient;
     SettingsClient mSettingsClient;
     LocationRequest mLocationRequest;
+
+    BluetoothAdapter mBluetoothAdapter;
 
     private final String TAG = this.getClass().getSimpleName();
     private final LocationListener locationListener = new LocationListener() {
@@ -215,17 +218,6 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         tv_status.setText(R.string.inspStatusRunning);
 
         mCanvasDrawing = getView().findViewById(R.id.canvas);
-        // mCanvasDrawing.draw("rect",0,0);
-        /*
-        Button addPoint = getView().findViewById(R.id.button_novoPonto);
-        addPoint.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.drawCenterPoint();
-            }
-        });
-        */
-        //mCanvasDrawing.drawCenterPoint();
 
         Button up = getView().findViewById(R.id.up);
         Button down = getView().findViewById(R.id.down);
@@ -284,6 +276,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             public void onClick(View view) {mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
             }
         });
+
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
     }
 
