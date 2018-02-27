@@ -3,15 +3,19 @@ package br.com.gasi.bastogeofone;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
@@ -65,7 +69,9 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
     FusedLocationProviderClient mFusedLocationClient;
     SettingsClient mSettingsClient;
     LocationRequest mLocationRequest;
-
+    ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
+    DeviceListAdapter mDeviceListAdapter;
+    ListView listView;
     BluetoothAdapter mBluetoothAdapter;
 
     private final String TAG = this.getClass().getSimpleName();
@@ -75,7 +81,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             currentLocation = location;
             //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
             LatLng locale = new LatLng(location.getLatitude(),location.getLongitude());
-            marker.remove();
+            if(marker!=null) marker.remove();
             marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
             CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
             mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
@@ -174,7 +180,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
                 locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
-    private void showAlert() {
+    private void showAlertLocation() {
         final AlertDialog.Builder dialog = new AlertDialog.Builder(this.getContext());
         dialog.setTitle("Enable Location")
                 .setMessage("Your Locations Settings is set to 'Off'.\nPlease Enable Location to " +
@@ -194,6 +200,19 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         dialog.show();
     }
 
+    private void showAlertBluetooth(){
+        Log.d(TAG, "showAlertBluetooth: started");
+        final AlertDialog.Builder mBuilder = new AlertDialog.Builder(getContext());
+        View mView = getLayoutInflater().inflate(R.layout.dialog_bluetooth_devices, null);
+        listView = mView.findViewById(R.id.listviewBTdevices);
+        mDeviceListAdapter = new DeviceListAdapter(getContext(), R.layout.array_list_item, mBTDevices);
+        listView.setAdapter(mDeviceListAdapter);
+        mBuilder.setView(mView);
+        AlertDialog dialog = mBuilder.create();
+        dialog.show();
+        Log.d(TAG, "showAlertBluetooth: ended");
+    }
+
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -211,7 +230,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             supportMapFragment.getMapAsync(this);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
         } else {
-            showAlert();
+            showAlertLocation();
         }
 
         TextView tv_status = getView().findViewById(R.id.tv_statusInspecao);
@@ -278,6 +297,80 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         });
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if(!mBluetoothAdapter.isEnabled()){
+            Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivity(enableBTIntent);
+
+            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+            getContext().registerReceiver(mBroadcastReceiver1, BTIntent);
+        }
+
+        if(mBluetoothAdapter.isEnabled()){
+            if(mBluetoothAdapter.isDiscovering()){
+                mBluetoothAdapter.cancelDiscovery();
+            }
+            //checkBTpermissions();
+            mBluetoothAdapter.startDiscovery();
+            IntentFilter discoverDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+            getContext().registerReceiver(mBroadcastReceiverDiscover, discoverDevicesIntent);
+            showAlertBluetooth();
+        }
+
+    }
+
+    private void checkBTpermissions() {
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP){
+            int permissionCheck = getContext().checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
+            permissionCheck += getContext().checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
+            if(permissionCheck!=0){
+                getActivity().requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},0);
+            }
+        }
+    }
+
+    private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if(action.equals(mBluetoothAdapter.ACTION_STATE_CHANGED)){
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, mBluetoothAdapter.ERROR);
+                switch(state){
+                    case BluetoothAdapter.STATE_OFF:
+                        Log.d(TAG, "mBroadcastReceiver1: STATE OFF");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        Log.d(TAG, "mBroadcastReceiver1: STATE TURNING OFF");
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        Log.d(TAG, "mBroadcastReceiver1: STATE ON");
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        Log.d(TAG, "mBroadcastReceiver1: STATE TURNING ON");
+                        break;
+                }
+            }
+        }
+    };
+
+    private final BroadcastReceiver mBroadcastReceiverDiscover = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if(action.equals(BluetoothDevice.ACTION_FOUND)){
+                Log.d(TAG, "mBroadcastReceiverDiscover: started");
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                mBTDevices.add(device);
+                Log.d(TAG, "mBroadcastReceiverDiscover: ended");
+            }
+        }
+    };
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy: destroying InspeçãoFragment.java");
+        getContext().unregisterReceiver(mBroadcastReceiver1);
 
     }
 
