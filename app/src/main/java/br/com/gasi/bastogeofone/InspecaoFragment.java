@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -58,7 +59,7 @@ import java.util.Locale;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
+public class InspecaoFragment extends Fragment implements OnMapReadyCallback, AdapterView.OnItemClickListener {
 
     GoogleMap mGoogleMap;
     CanvasDrawing mCanvasDrawing;
@@ -79,6 +80,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         @Override
         public void onLocationChanged(Location location) {
             currentLocation = location;
+            if(lastLocation==null) lastLocation = location;
             //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
             LatLng locale = new LatLng(location.getLatitude(),location.getLongitude());
             if(marker!=null) marker.remove();
@@ -106,6 +108,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
     };
 
     private void getDisplacement() {
+        Log.d(TAG, "getDisplacement: currentLocation: "+currentLocation);
+        Log.d(TAG, "getDisplacement: lastLocation: "+lastLocation);
         double deltay = currentLocation.getLatitude()-lastLocation.getLatitude();
         double deltax = currentLocation.getLongitude()-lastLocation.getLongitude();
         double angularCoef = deltay/deltax;
@@ -122,35 +126,35 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         double disp = Math.hypot(deltax,deltay);
         //Toast.makeText(getContext(), "Mod: "+disp+";Ang: "+angle, Toast.LENGTH_SHORT).show();
         if(angle>=337.5 || angle<22.5){
-            Toast.makeText(getContext(), "Right", Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getContext(), "Right", Toast.LENGTH_SHORT).show();
             mCanvasDrawing.move(CanvasDrawing.RIGHT);
         }else{
             if(angle>=22.5 && angle<67.5){
-                Toast.makeText(getContext(), "Upright", Toast.LENGTH_SHORT).show();
+               // Toast.makeText(getContext(), "Upright", Toast.LENGTH_SHORT).show();
                 mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
             }else{
                 if(angle>=67.5 && angle<112.5){
-                    Toast.makeText(getContext(), "Up", Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getContext(), "Up", Toast.LENGTH_SHORT).show();
                     mCanvasDrawing.move(CanvasDrawing.UP);
                 }else{
                     if(angle>=112.5 && angle<157.5){
-                        Toast.makeText(getContext(), "Upleft", Toast.LENGTH_SHORT).show();
+                        //Toast.makeText(getContext(), "Upleft", Toast.LENGTH_SHORT).show();
                         mCanvasDrawing.move(CanvasDrawing.UPLEFT);
                     }else{
                         if(angle>=157.5 && angle<202.5){
-                            Toast.makeText(getContext(), "Left", Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(getContext(), "Left", Toast.LENGTH_SHORT).show();
                             mCanvasDrawing.move(CanvasDrawing.LEFT);
                         }else{
                             if(angle>=202.5 && angle<247.5){
-                                Toast.makeText(getContext(), "Downleft", Toast.LENGTH_SHORT).show();
+                                //Toast.makeText(getContext(), "Downleft", Toast.LENGTH_SHORT).show();
                                 mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
                             }else{
                                 if(angle>=247.5 && angle<292.5){
-                                    Toast.makeText(getContext(), "Down", Toast.LENGTH_SHORT).show();
+                                    //Toast.makeText(getContext(), "Down", Toast.LENGTH_SHORT).show();
                                     mCanvasDrawing.move(CanvasDrawing.DOWN);
                                 }else{
                                     if(angle>=292.5 && angle<337.5){
-                                        Toast.makeText(getContext(), "Downright", Toast.LENGTH_SHORT).show();
+                                        //Toast.makeText(getContext(), "Downright", Toast.LENGTH_SHORT).show();
                                         mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
                                     }
                                 }
@@ -202,11 +206,12 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
 
     private void showAlertBluetooth(){
         Log.d(TAG, "showAlertBluetooth: started");
-        final AlertDialog.Builder mBuilder = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder mBuilder = new AlertDialog.Builder(getActivity());
         View mView = getLayoutInflater().inflate(R.layout.dialog_bluetooth_devices, null);
         listView = mView.findViewById(R.id.listviewBTdevices);
         mDeviceListAdapter = new DeviceListAdapter(getContext(), R.layout.array_list_item, mBTDevices);
         listView.setAdapter(mDeviceListAdapter);
+        listView.setOnItemClickListener(this);
         mBuilder.setView(mView);
         AlertDialog dialog = mBuilder.create();
         dialog.show();
@@ -301,10 +306,10 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
         if(!mBluetoothAdapter.isEnabled()){
             Intent enableBTIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivity(enableBTIntent);
-
-            IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
-            getContext().registerReceiver(mBroadcastReceiver1, BTIntent);
         }
+
+        IntentFilter BTIntent = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
+        getContext().registerReceiver(mBroadcastReceiver1, BTIntent);
 
         if(mBluetoothAdapter.isEnabled()){
             if(mBluetoothAdapter.isDiscovering()){
@@ -312,10 +317,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             }
             //checkBTpermissions();
             mBluetoothAdapter.startDiscovery();
+            if(mBluetoothAdapter.isDiscovering()) Log.d(TAG, "onViewCreated: Blutooth discovering");
             IntentFilter discoverDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
             getContext().registerReceiver(mBroadcastReceiverDiscover, discoverDevicesIntent);
-            showAlertBluetooth();
         }
+
+        IntentFilter bondDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        getContext().registerReceiver(mBroadcastReceiverBond, bondDevicesIntent);
 
     }
 
@@ -328,6 +336,25 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
             }
         }
     }
+
+    private final BroadcastReceiver mBroadcastReceiverBond = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if(action.equals(BluetoothDevice.ACTION_BOND_STATE_CHANGED)){
+                BluetoothDevice mDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                if(mDevice.getBondState()==BluetoothDevice.BOND_BONDED){
+                    Log.d(TAG, "mBroadcastReceiverBond: BONDED");
+                }
+                if(mDevice.getBondState()==BluetoothDevice.BOND_BONDING){
+                    Log.d(TAG, "mBroadcastReceiverBond: BONDING");
+                }
+                if(mDevice.getBondState()==BluetoothDevice.BOND_NONE){
+                    Log.d(TAG, "mBroadcastReceiverBond: BOND NONE");
+                }
+            }
+        }
+    };
 
     private final BroadcastReceiver mBroadcastReceiver1 = new BroadcastReceiver() {
         @Override
@@ -361,6 +388,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
                 Log.d(TAG, "mBroadcastReceiverDiscover: started");
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 mBTDevices.add(device);
+                showAlertBluetooth();
                 Log.d(TAG, "mBroadcastReceiverDiscover: ended");
             }
         }
@@ -422,4 +450,18 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback {
 
     }
 
+    @Override
+    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+        mBluetoothAdapter.cancelDiscovery();
+        Log.d(TAG, "onItemClick: DEVICE CLICKED");
+        String deviceName = mBTDevices.get(i).getName();
+        String deviceAddress = mBTDevices.get(i).getAddress();
+        Log.d(TAG, "onItemClick: device name: "+deviceName);
+        Log.d(TAG, "onItemClick: device address: "+deviceAddress);
+
+        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
+            Log.d(TAG, "onItemClick: Trying to pair with "+ deviceName);
+            mBTDevices.get(i).createBond();
+        }
+    }
 }
