@@ -28,4 +28,6 @@
     <string name="BTStatusLabel">Status do Bluetooth:</string>
     <string name="BTStatusConnected">Conectado</string>
     <string name="dispBTencontrados">Dispositivos Bluetooth encontrados</string>
+    <string name="closeBTDevicesDialog">Fechar</string>
+    <string name="BTStatusConnectedTo"> conectado a </string>
 </resources>

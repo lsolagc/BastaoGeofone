@@ -9,9 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -19,8 +16,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresPermission;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -28,16 +23,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -47,13 +39,10 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnSuccessListener;
 
-import java.io.IOException;
-import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.Set;
 
 
 /**
@@ -74,6 +63,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     DeviceListAdapter mDeviceListAdapter;
     ListView listView;
     BluetoothAdapter mBluetoothAdapter;
+    AlertDialog alert = null;
+    TextView tv_BTStatus;
 
     private final String TAG = this.getClass().getSimpleName();
     private final LocationListener locationListener = new LocationListener() {
@@ -108,8 +99,6 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     };
 
     private void getDisplacement() {
-        Log.d(TAG, "getDisplacement: currentLocation: "+currentLocation);
-        Log.d(TAG, "getDisplacement: lastLocation: "+lastLocation);
         double deltay = currentLocation.getLatitude()-lastLocation.getLatitude();
         double deltax = currentLocation.getLongitude()-lastLocation.getLongitude();
         double angularCoef = deltay/deltax;
@@ -205,17 +194,30 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     }
 
     private void showAlertBluetooth(){
-        Log.d(TAG, "showAlertBluetooth: started");
-        AlertDialog.Builder mBuilder = new AlertDialog.Builder(getActivity());
-        View mView = getLayoutInflater().inflate(R.layout.dialog_bluetooth_devices, null);
-        listView = mView.findViewById(R.id.listviewBTdevices);
-        mDeviceListAdapter = new DeviceListAdapter(getContext(), R.layout.array_list_item, mBTDevices);
-        listView.setAdapter(mDeviceListAdapter);
-        listView.setOnItemClickListener(this);
-        mBuilder.setView(mView);
-        AlertDialog dialog = mBuilder.create();
-        dialog.show();
-        Log.d(TAG, "showAlertBluetooth: ended");
+        try{
+            Log.d(TAG, "showAlertBluetooth: started");
+            alert = new AlertDialog.Builder(getActivity()).create();
+            View mView = getLayoutInflater().inflate(R.layout.dialog_bluetooth_devices, null);
+            listView = mView.findViewById(R.id.listviewBTdevices);
+            mDeviceListAdapter = new DeviceListAdapter(getContext(), R.layout.array_list_item, mBTDevices);
+            listView.setAdapter(mDeviceListAdapter);
+            listView.setOnItemClickListener(this);
+            mView.findViewById(R.id.btn_dialogDispBTEncontrados).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    alert.dismiss();
+                    getActivity().onBackPressed();
+                }
+            });
+            alert.setView(mView);
+            alert.setCancelable(false);
+            alert.show();
+            Log.d(TAG, "showAlertBluetooth: ended");
+        }catch(Exception e){
+            e.printStackTrace();
+            Log.e(TAG, "showAlertBluetooth: "+e.getMessage(), e);
+        }
+
     }
 
     @Override
@@ -223,15 +225,9 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         super.onViewCreated(view, savedInstanceState);
 
         locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-        List<PointOfInterest> poi = generatePoi();
-//        ListView listView = getView().findViewById(R.id.listview_poi);
-//        ArrayAdapter<PointOfInterest> adapter = new ArrayAdapter<>(this.getContext(),android.R.layout.simple_list_item_1, poi);
-        //Log.i(TAG, "onViewCreated: poi: "+poi);
-//        listView.setAdapter(adapter);
 
         if (isLocationEnabled()) {
             SupportMapFragment supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map2);
-            //Log.i(TAG, "onCreateView: supportMapFragment: "+supportMapFragment);
             supportMapFragment.getMapAsync(this);
             locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
         } else {
@@ -240,6 +236,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
 
         TextView tv_status = getView().findViewById(R.id.tv_statusInspecao);
         tv_status.setText(R.string.inspStatusRunning);
+        tv_BTStatus = getView().findViewById(R.id.tv_statusBt);
 
         mCanvasDrawing = getView().findViewById(R.id.canvas);
 
@@ -319,6 +316,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             mBluetoothAdapter.startDiscovery();
             if(mBluetoothAdapter.isDiscovering()) Log.d(TAG, "onViewCreated: Blutooth discovering");
             IntentFilter discoverDevicesIntent = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+
             getContext().registerReceiver(mBroadcastReceiverDiscover, discoverDevicesIntent);
         }
 
@@ -345,6 +343,12 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 BluetoothDevice mDevice = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if(mDevice.getBondState()==BluetoothDevice.BOND_BONDED){
                     Log.d(TAG, "mBroadcastReceiverBond: BONDED");
+                    if(alert!=null){
+                        alert.dismiss();
+                        String text = getString(R.string.BTStatusConnectedTo)+ mDevice.getName();
+                        tv_BTStatus.setText(text);
+                        //TODO Abrir conexão a dispositivo recém pareado
+                    }
                 }
                 if(mDevice.getBondState()==BluetoothDevice.BOND_BONDING){
                     Log.d(TAG, "mBroadcastReceiverBond: BONDING");
@@ -360,8 +364,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if(action.equals(mBluetoothAdapter.ACTION_STATE_CHANGED)){
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, mBluetoothAdapter.ERROR);
+            if(action != null && action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)){
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 switch(state){
                     case BluetoothAdapter.STATE_OFF:
                         Log.d(TAG, "mBroadcastReceiver1: STATE OFF");
@@ -384,7 +388,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            if(action.equals(BluetoothDevice.ACTION_FOUND)){
+            if(action != null && action.equals(BluetoothDevice.ACTION_FOUND)){
                 Log.d(TAG, "mBroadcastReceiverDiscover: started");
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 mBTDevices.add(device);
@@ -458,10 +462,21 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         String deviceAddress = mBTDevices.get(i).getAddress();
         Log.d(TAG, "onItemClick: device name: "+deviceName);
         Log.d(TAG, "onItemClick: device address: "+deviceAddress);
-
-        if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
-            Log.d(TAG, "onItemClick: Trying to pair with "+ deviceName);
-            mBTDevices.get(i).createBond();
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        if(pairedDevices.size() > 0 && pairedDevices.contains(mBTDevices.get(i))){
+            if(alert!=null){
+                alert.dismiss();
+                String text = getString(R.string.BTStatusConnectedTo)+ deviceName;
+                tv_BTStatus.setText(text);
+                //TODO Abrir conexão a dispositivo anteriormente pareado
+            }
         }
+        else{
+            if(Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN_MR2){
+                Log.d(TAG, "onItemClick: Trying to pair with "+ deviceName);
+                mBTDevices.get(i).createBond();
+            }
+        }
+
     }
 }
