@@ -161,6 +161,7 @@ public class CanvasDrawing extends View {
         }
     }
 
+    @Nullable
     private Paint setColor() {
         Paint mmPaint = new Paint();
         dummyReceiveValue();

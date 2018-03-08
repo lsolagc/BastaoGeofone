@@ -2,11 +2,14 @@ package br.com.gasi.bastogeofone;
 
 import android.app.Fragment;
 import android.bluetooth.BluetoothAdapter;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.FragmentManager;
 import android.support.fragment.*;
 import android.support.v7.app.AlertDialog;
@@ -80,6 +83,7 @@ public class MainActivity extends AppCompatActivity
         }
 
     }
+
 
     @Override
     public void onBackPressed() {

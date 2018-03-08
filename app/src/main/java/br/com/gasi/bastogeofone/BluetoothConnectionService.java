@@ -6,11 +6,16 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.Intent;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.UUID;
 
 /**
@@ -21,7 +26,7 @@ public class BluetoothConnectionService {
 
     private static final String TAG = "BluetoothConnectionServ";
     private static final String appName = "Bastao Geofone";
-    private static final UUID MY_UUID = UUID.fromString("045b19d2-bfab-423c-9227-139c4243d90d");
+    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     private final BluetoothAdapter mBluetoothAdapter;
     Context mContext;
 
@@ -35,6 +40,7 @@ public class BluetoothConnectionService {
     public BluetoothConnectionService(Context context) {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mContext = context;
+        start();
     }
 
     private class AcceptThread extends Thread{
@@ -147,7 +153,12 @@ public class BluetoothConnectionService {
             mmSocket = socket;
             InputStream tmpIn = null;
             OutputStream tmpOut = null;
-            mProgressDialog.dismiss();
+
+            try{
+                mProgressDialog.dismiss();
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
             try {
                 tmpIn = mmSocket.getInputStream();
@@ -163,15 +174,27 @@ public class BluetoothConnectionService {
         }
 
         public void run(){
-            byte[] buffer = new byte[1024];
-
-            int bytes;
-
-            while (true){
+           // byte[] buffer = new byte[2048];
+            Reader reader = new BufferedReader(new InputStreamReader(mmInStream));
+            //int bytes;
+            String incomingMessage = "";
+            while (true) {
                 try {
-                    bytes = mmInStream.read(buffer);
-                    String incomingMessage = new String(buffer, 0, bytes);
-                    Log.d(TAG, "run: InputStream: incominMessage: "+incomingMessage);
+                    //bytes = mmInStream.read(buffer);
+                    int ch;
+                    while ((ch = reader.read()) != -1){
+                        char mChar = (char) ch;
+                        //Log.d(TAG, "run: char:"+mChar);
+                        incomingMessage += mChar;
+                        if (incomingMessage.endsWith("}")){
+                            break;
+                        }
+                    }
+                    //Log.d(TAG, "run: InputStream: incomingMessage: " + incomingMessage);
+                    Intent incomingMessageIntent = new Intent("BastaoGeofoneIncomingData");
+                    incomingMessageIntent.putExtra("DATA", incomingMessage);
+                    LocalBroadcastManager.getInstance(mContext).sendBroadcast(incomingMessageIntent);
+                    incomingMessage = "";
                 } catch (IOException e) {
                     Log.e(TAG, "run: couldn't read input stream", e);
                     e.printStackTrace();

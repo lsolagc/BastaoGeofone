@@ -31,6 +31,11 @@ public class DeviceListAdapter extends ArrayAdapter<BluetoothDevice> {
         mViewResourceId = tvResourceId;
     }
 
+    @Override
+    public void notifyDataSetChanged() {
+        super.notifyDataSetChanged();
+    }
+
     public View getView(int position, View convertView, ViewGroup parent){
         convertView = mLayoutInflater.inflate(mViewResourceId, null);
         BluetoothDevice device = mDevices.get(position);
