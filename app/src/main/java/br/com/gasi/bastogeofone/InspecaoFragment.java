@@ -13,7 +13,6 @@ import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -71,6 +70,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private static final int REQUEST_CHECK_SETTINGS = 6520;
     private static final String PAUSE_COMM_MSG = "STOP";
     private static final String RESUME_COMM_MSG = "SEND";
+    private static final float MINIMUM_DISTANCE = (float) 0.5;
     GoogleMap mGoogleMap;
     CanvasDrawing mCanvasDrawing;
     LocationManager locationManager;
@@ -94,6 +94,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private float mDistance;
 
     private final String TAG = this.getClass().getSimpleName();
+    private boolean isWaitingForResponse = false;
+    private JSONObject jsonObject;
 
     public InspecaoFragment() {
         // Required empty public constructor
@@ -166,37 +168,48 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         mLocationCallback = new LocationCallback(){
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                if(locationResult==null){
-                    return;
-                }
-                else{
+                if (locationResult != null) {
                     Log.d(TAG, "onLocationResult: locationResult: "+locationResult.toString());
                     for(Location location : locationResult.getLocations()){
-                        //TODO: Update UI
                         //Log.d(TAG, "onLocationResult: location: "+location.toString());
                         currentLocation = location;
                         if (lastLocation == null) {
                             lastLocation = location;
                         }
-                        getDisplacement();
+                        if (jsonObject != null && !isWaitingForResponse) {
+                            Log.d(TAG, "onLocationResult: calling getDisplacement(double)");
+                            double value;
+                            if (jsonObject.has("Valor")) {
+                                try {
+                                    value = (double) jsonObject.get("Valor");
+                                    getDisplacement(value);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                                if (mDistance > MINIMUM_DISTANCE) {
+                                    LatLng locale = new LatLng(location.getLatitude(), location.getLongitude());
+                                    if (marker != null) {
+                                        marker.remove();
+                                    }
+                                    marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
+                                    CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
+                                    mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
+                                    lastLocation = currentLocation;
+                                    if(mBluetoothConnection.getmConnectedThread() != null && !isWaitingForResponse){
+                                        mBluetoothConnection.write(RESUME_COMM_MSG.getBytes(Charset.defaultCharset()));
+                                        isWaitingForResponse = true;
+                                    }
+                                }
+                            }
+                        }
                         //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
-                        LatLng locale = new LatLng(location.getLatitude(), location.getLongitude());
-                        if (marker != null) {
-                            marker.remove();
-                        }
-                        marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
-                        CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
-                        mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
-                        lastLocation = currentLocation;
-                        if(mBluetoothConnection.getmConnectedThread() != null){
-                            mBluetoothConnection.write(RESUME_COMM_MSG.getBytes(Charset.defaultCharset()));
-                        }
                     }
                 }
             }
         };
     }
 
+    // Dummy method
     private void getDisplacement() {
         double deltay = currentLocation.getLatitude() - lastLocation.getLatitude();
         double deltax = currentLocation.getLongitude() - lastLocation.getLongitude();
@@ -214,40 +227,103 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         while (angle > 360) {
             angle = angle - 360;
         }
-        double disp = Math.hypot(deltax, deltay);
         mDistance = measure(currentLocation.getLatitude(), currentLocation.getLongitude(), lastLocation.getLatitude(), lastLocation.getLongitude());
-        //Log.d(TAG, "getDisplacement: disp: "+disp+"; Angle: "+angle);
-        if (angle >= 337.5 || angle < 22.5) {
-            //Log.d(TAG, "getDisplacement: right");
-            mCanvasDrawing.move(CanvasDrawing.RIGHT);
-        } else {
-            if (angle >= 22.5 && angle < 67.5) {
-                //Log.d(TAG, "getDisplacement: upright");
-                mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
+        Log.d(TAG, "getDisplacement: disp: "+mDistance+"; Angle: "+angle);
+        if (mDistance > MINIMUM_DISTANCE) {
+            if (angle >= 337.5 || angle < 22.5) {
+                //Log.d(TAG, "getDisplacement: right");
+                mCanvasDrawing.move(CanvasDrawing.RIGHT);
             } else {
-                if (angle >= 67.5 && angle < 112.5) {
-                    //Log.d(TAG, "getDisplacement: up");
-                    mCanvasDrawing.move(CanvasDrawing.UP);
+                if (angle >= 22.5 && angle < 67.5) {
+                    //Log.d(TAG, "getDisplacement: upright");
+                    mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
                 } else {
-                    if (angle >= 112.5 && angle < 157.5) {
-                        //Log.d(TAG, "getDisplacement: upleft");
-                        mCanvasDrawing.move(CanvasDrawing.UPLEFT);
+                    if (angle >= 67.5 && angle < 112.5) {
+                        //Log.d(TAG, "getDisplacement: up");
+                        mCanvasDrawing.move(CanvasDrawing.UP);
                     } else {
-                        if (angle >= 157.5 && angle < 202.5) {
-                            //Log.d(TAG, "getDisplacement: left");
-                            mCanvasDrawing.move(CanvasDrawing.LEFT);
+                        if (angle >= 112.5 && angle < 157.5) {
+                            //Log.d(TAG, "getDisplacement: upleft");
+                            mCanvasDrawing.move(CanvasDrawing.UPLEFT);
                         } else {
-                            if (angle >= 202.5 && angle < 247.5) {
-                                //Log.d(TAG, "getDisplacement: downleft");
-                                mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
+                            if (angle >= 157.5 && angle < 202.5) {
+                                //Log.d(TAG, "getDisplacement: left");
+                                mCanvasDrawing.move(CanvasDrawing.LEFT);
                             } else {
-                                if (angle >= 247.5 && angle < 292.5) {
-                                    //Log.d(TAG, "getDisplacement: down");
-                                    mCanvasDrawing.move(CanvasDrawing.DOWN);
+                                if (angle >= 202.5 && angle < 247.5) {
+                                    //Log.d(TAG, "getDisplacement: downleft");
+                                    mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
                                 } else {
-                                    if (angle >= 292.5 && angle < 337.5) {
-                                        //Log.d(TAG, "getDisplacement: downright");
-                                        mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
+                                    if (angle >= 247.5 && angle < 292.5) {
+                                        //Log.d(TAG, "getDisplacement: down");
+                                        mCanvasDrawing.move(CanvasDrawing.DOWN);
+                                    } else {
+                                        if (angle >= 292.5 && angle < 337.5) {
+                                            //Log.d(TAG, "getDisplacement: downright");
+                                            mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void getDisplacement(double receivedIntensity) {
+        double deltay = currentLocation.getLatitude() - lastLocation.getLatitude();
+        double deltax = currentLocation.getLongitude() - lastLocation.getLongitude();
+        Log.d(TAG, "getDisplacement: [deltax deltay]: ["+deltax+" "+deltay+"]");
+        double angularCoef = deltay / deltax;
+        double angle = Math.toDegrees(Math.atan(angularCoef));
+        if (deltax < 0 && deltay > 0) {
+            angle = angle - 180;
+        }else if(deltax < 0 && deltay < 0){
+            angle = angle + 180;
+        }
+        while (angle < 0){
+            angle = angle + 360;
+        }
+        while (angle > 360) {
+            angle = angle - 360;
+        }
+        mDistance = measure(currentLocation.getLatitude(), currentLocation.getLongitude(), lastLocation.getLatitude(), lastLocation.getLongitude());
+        Log.d(TAG, "getDisplacement: disp: "+mDistance+"; Angle: "+angle);
+        if (mDistance > MINIMUM_DISTANCE) {
+            if (angle >= 337.5 || angle < 22.5) {
+                //Log.d(TAG, "getDisplacement: right");
+                mCanvasDrawing.move(CanvasDrawing.RIGHT, receivedIntensity);
+            } else {
+                if (angle >= 22.5 && angle < 67.5) {
+                    //Log.d(TAG, "getDisplacement: upright");
+                    mCanvasDrawing.move(CanvasDrawing.UPRIGHT, receivedIntensity);
+                } else {
+                    if (angle >= 67.5 && angle < 112.5) {
+                        //Log.d(TAG, "getDisplacement: up");
+                        mCanvasDrawing.move(CanvasDrawing.UP, receivedIntensity);
+                    } else {
+                        if (angle >= 112.5 && angle < 157.5) {
+                            //Log.d(TAG, "getDisplacement: upleft");
+                            mCanvasDrawing.move(CanvasDrawing.UPLEFT, receivedIntensity);
+                        } else {
+                            if (angle >= 157.5 && angle < 202.5) {
+                                //Log.d(TAG, "getDisplacement: left");
+                                mCanvasDrawing.move(CanvasDrawing.LEFT, receivedIntensity);
+                            } else {
+                                if (angle >= 202.5 && angle < 247.5) {
+                                    //Log.d(TAG, "getDisplacement: downleft");
+                                    mCanvasDrawing.move(CanvasDrawing.DOWNLEFT, receivedIntensity);
+                                } else {
+                                    if (angle >= 247.5 && angle < 292.5) {
+                                        //Log.d(TAG, "getDisplacement: down");
+                                        mCanvasDrawing.move(CanvasDrawing.DOWN, receivedIntensity);
+                                    } else {
+                                        if (angle >= 292.5 && angle < 337.5) {
+                                            //Log.d(TAG, "getDisplacement: downright");
+                                            mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT, receivedIntensity);
+                                        }
                                     }
                                 }
                             }
@@ -279,6 +355,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
         if(mBluetoothConnection.getmConnectedThread() != null){
             mBluetoothConnection.write(RESUME_COMM_MSG.getBytes(Charset.defaultCharset()));
+            isWaitingForResponse = true;
         }
     }
 
@@ -352,8 +429,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         } else {
             showAlertLocation();
         }
-        TextView tv_status = getView().findViewById(R.id.tv_statusInspecao);
-        tv_status.setText(R.string.inspStatusRunning);
+        TextView tv_status;
+        try {
+            tv_status = getView().findViewById(R.id.tv_statusInspecao);
+            tv_status.setText(R.string.inspStatusRunning);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
         tv_BTStatus = getView().findViewById(R.id.tv_statusBt);
         mCanvasDrawing = getView().findViewById(R.id.canvas);
 
@@ -436,7 +518,6 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             if (mBluetoothAdapter.isDiscovering()) {
                 mBluetoothAdapter.cancelDiscovery();
             }
-            //checkBTpermissions();
             mBluetoothAdapter.startDiscovery();
             if (mBluetoothAdapter.isDiscovering())
                 Log.d(TAG, "onViewCreated: Blutooth discovering");
@@ -454,25 +535,20 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
 
     }
 
-    private void checkBTpermissions() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
-            int permissionCheck = getContext().checkSelfPermission("Manifest.permission.ACCESS_FINE_LOCATION");
-            permissionCheck += getContext().checkSelfPermission("Manifest.permission.ACCESS_COARSE_LOCATION");
-            if (permissionCheck != 0) {
-                getActivity().requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-            }
-        }
-    }
-
     BroadcastReceiver dataReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String data = intent.getStringExtra("DATA");
-            //Log.d(TAG, "onReceive: data: "+data);
+            Log.d(TAG, "onReceive: data: "+data);
             try {
-                JSONObject jsonObject = new JSONObject(data);
+                if(data.contains(RESUME_COMM_MSG)){
+                    data = data.replace(RESUME_COMM_MSG, "");
+                }else if(data.contains(PAUSE_COMM_MSG)){
+                    data = data.replace(PAUSE_COMM_MSG, "");
+                }
+                jsonObject = new JSONObject(data);
                 Log.d(TAG, "onDataReceive: JSON: " + jsonObject);
-                //TODO:
+                isWaitingForResponse = false;
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -633,12 +709,12 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     this.getActivity().onBackPressed();
                 }
-                return;
+                break;
             case PERMISSION_REQUEST_FINE_LOCATION:
                 if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                     this.getActivity().onBackPressed();
                 }
-                return;
+                break;
         }
     }
 
