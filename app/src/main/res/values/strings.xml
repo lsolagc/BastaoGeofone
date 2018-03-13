@@ -30,4 +30,5 @@
     <string name="dispBTencontrados">Dispositivos Bluetooth encontrados</string>
     <string name="closeBTDevicesDialog">Fechar</string>
     <string name="BTStatusConnectedTo"> conectado a </string>
+    <string name="geocoderFail">Google Geocoder failed! Please restart the app.</string>
 </resources>

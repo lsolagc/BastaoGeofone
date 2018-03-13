@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.UUID;
 
 /**
@@ -30,12 +31,12 @@ public class BluetoothConnectionService {
     private final BluetoothAdapter mBluetoothAdapter;
     Context mContext;
 
-    private AcceptThread mInsecureAcceptThread;
-    private ConnectThread mConnectThread;
-    private ConnectedThread mConnectedThread;
-    private BluetoothDevice mmDevice;
-    private UUID deviceUUID;
-    ProgressDialog mProgressDialog;
+    private AcceptThread mInsecureAcceptThread = null;
+    private ConnectThread mConnectThread = null;
+    private ConnectedThread mConnectedThread = null;
+    private BluetoothDevice mmDevice = null;
+    private UUID deviceUUID = null;
+    ProgressDialog mProgressDialog = null;
 
     public BluetoothConnectionService(Context context) {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -212,6 +213,15 @@ public class BluetoothConnectionService {
             }
         }
 
+        public void write(byte[] outputMessage){
+            Log.d(TAG, "write: Writing to output stream: " + new String(outputMessage, Charset.defaultCharset()));
+            try {
+                mmOutStream.write(outputMessage);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     public synchronized void start(){
@@ -236,5 +246,13 @@ public class BluetoothConnectionService {
         Log.d(TAG, "connected: Starting");
         mConnectedThread = new ConnectedThread(mmSocket);
         mConnectedThread.start();
+    }
+
+    public void write(byte[] message){
+        mConnectedThread.write(message);
+    }
+
+    public ConnectedThread getmConnectedThread(){
+        return mConnectedThread;
     }
 }

@@ -12,7 +12,6 @@ import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,7 +20,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -32,7 +30,6 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -58,11 +55,10 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executor;
 
 
 /**
@@ -73,10 +69,12 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 6514;
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 6515;
     private static final int REQUEST_CHECK_SETTINGS = 6520;
+    private static final String PAUSE_COMM_MSG = "STOP";
+    private static final String RESUME_COMM_MSG = "SEND";
     GoogleMap mGoogleMap;
     CanvasDrawing mCanvasDrawing;
     LocationManager locationManager;
-    long minTime = 500, minDistance = 1;
+    long FASTEST_INTERVAL = 1000, INTERVAL = 2000;
     Marker marker;
     Location currentLocation, lastLocation;
     FusedLocationProviderClient mFusedLocationClient;
@@ -87,103 +85,15 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     DeviceListAdapter mDeviceListAdapter;
     ListView listView;
     BluetoothAdapter mBluetoothAdapter;
-    AlertDialog alert = null;
+    AlertDialog bluetoothDialog = null;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     TextView tv_BTStatus;
     BluetoothConnectionService mBluetoothConnection;
     BluetoothDevice mDevice = null;
     private LocationCallback mLocationCallback;
+    private float mDistance;
 
     private final String TAG = this.getClass().getSimpleName();
-    private final LocationListener locationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(Location location) {
-            currentLocation = location;
-            if (lastLocation == null) lastLocation = location;
-            //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
-            LatLng locale = new LatLng(location.getLatitude(), location.getLongitude());
-            if (marker != null) marker.remove();
-            marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
-            CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
-            mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
-            getDisplacement();
-            lastLocation = currentLocation;
-        }
-
-        @Override
-        public void onStatusChanged(String s, int i, Bundle bundle) {
-            Toast.makeText(getContext(), "onStatusChanged Called", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onProviderEnabled(String s) {
-            Toast.makeText(getContext(), "onProviderEnabled Called", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onProviderDisabled(String s) {
-            Toast.makeText(getContext(), "onProviderDisabled Called", Toast.LENGTH_SHORT).show();
-        }
-    };
-    private boolean mRequestingLocationUpdates;
-
-
-    private void getDisplacement() {
-        double deltay = currentLocation.getLatitude() - lastLocation.getLatitude();
-        double deltax = currentLocation.getLongitude() - lastLocation.getLongitude();
-        double angularCoef = deltay / deltax;
-        double angle = Math.toDegrees(Math.atan(angularCoef));
-        if (deltax < 0) {
-            angle = angle - 180;
-        }
-        if (angle < 0) {
-            angle = 360 - angle;
-        }
-        while (angle > 360) {
-            angle = angle - 360;
-        }
-        double disp = Math.hypot(deltax, deltay);
-        //Toast.makeText(getContext(), "Mod: "+disp+";Ang: "+angle, Toast.LENGTH_SHORT).show();
-        if (angle >= 337.5 || angle < 22.5) {
-            //Toast.makeText(getContext(), "Right", Toast.LENGTH_SHORT).show();
-            mCanvasDrawing.move(CanvasDrawing.RIGHT);
-        } else {
-            if (angle >= 22.5 && angle < 67.5) {
-                // Toast.makeText(getContext(), "Upright", Toast.LENGTH_SHORT).show();
-                mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
-            } else {
-                if (angle >= 67.5 && angle < 112.5) {
-                    //Toast.makeText(getContext(), "Up", Toast.LENGTH_SHORT).show();
-                    mCanvasDrawing.move(CanvasDrawing.UP);
-                } else {
-                    if (angle >= 112.5 && angle < 157.5) {
-                        //Toast.makeText(getContext(), "Upleft", Toast.LENGTH_SHORT).show();
-                        mCanvasDrawing.move(CanvasDrawing.UPLEFT);
-                    } else {
-                        if (angle >= 157.5 && angle < 202.5) {
-                            //Toast.makeText(getContext(), "Left", Toast.LENGTH_SHORT).show();
-                            mCanvasDrawing.move(CanvasDrawing.LEFT);
-                        } else {
-                            if (angle >= 202.5 && angle < 247.5) {
-                                //Toast.makeText(getContext(), "Downleft", Toast.LENGTH_SHORT).show();
-                                mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
-                            } else {
-                                if (angle >= 247.5 && angle < 292.5) {
-                                    //Toast.makeText(getContext(), "Down", Toast.LENGTH_SHORT).show();
-                                    mCanvasDrawing.move(CanvasDrawing.DOWN);
-                                } else {
-                                    if (angle >= 292.5 && angle < 337.5) {
-                                        //Toast.makeText(getContext(), "Downright", Toast.LENGTH_SHORT).show();
-                                        mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     public InspecaoFragment() {
         // Required empty public constructor
@@ -196,23 +106,30 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_inspecao, container, false);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+
         createLocationRequest();
         createLocationCallback();
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(mLocationRequest);
-        mSettingsClient = LocationServices.getSettingsClient(getContext());
+
+        mSettingsClient = LocationServices.getSettingsClient(getActivity());
         task = mSettingsClient.checkLocationSettings(builder.build());
-        task.addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+
+        task.addOnSuccessListener(this.getActivity(), new OnSuccessListener<LocationSettingsResponse>() {
             @Override
             public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
                 if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
                     ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
                 }
+                /*
+                Log.d(TAG, "onSuccess: mLocationRequest: "+mLocationRequest.toString());
+                Log.d(TAG, "onSuccess: mLocationCallback: "+mLocationCallback.toString());
+                */
                 mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
             }
         });
 
-        task.addOnFailureListener(new OnFailureListener() {
+        task.addOnFailureListener(this.getActivity(), new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 if (e instanceof ResolvableApiException) {
@@ -229,24 +146,126 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 }
             }
         });
+
         return v;
+    }
+
+    private float measure(double lat1, double lon1, double lat2, double lon2){  // generally used geo measurement function
+        float R = (float) 6378.137; // Radius of earth in KM
+        double dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
+        double dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        float d = (float) (R * c);
+        return d * 1000; // meters
     }
 
     private void createLocationCallback() {
         mLocationCallback = new LocationCallback(){
             @Override
             public void onLocationResult(LocationResult locationResult) {
-                for(Location location : locationResult.getLocations()){
-                    //TODO: Update UI
+                if(locationResult==null){
+                    return;
+                }
+                else{
+                    Log.d(TAG, "onLocationResult: locationResult: "+locationResult.toString());
+                    for(Location location : locationResult.getLocations()){
+                        //TODO: Update UI
+                        //Log.d(TAG, "onLocationResult: location: "+location.toString());
+                        currentLocation = location;
+                        if (lastLocation == null) {
+                            lastLocation = location;
+                        }
+                        getDisplacement();
+                        //Toast.makeText(getContext(), "Localização Alterada: "+location, Toast.LENGTH_SHORT).show();
+                        LatLng locale = new LatLng(location.getLatitude(), location.getLongitude());
+                        if (marker != null) {
+                            marker.remove();
+                        }
+                        marker = mGoogleMap.addMarker(new MarkerOptions().position(locale).title("Localização atual"));
+                        CameraPosition position = CameraPosition.builder().target(locale).zoom(20).build();
+                        mGoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(position));
+                        lastLocation = currentLocation;
+                        if(mBluetoothConnection.getmConnectedThread() != null){
+                            mBluetoothConnection.write(RESUME_COMM_MSG.getBytes(Charset.defaultCharset()));
+                        }
+                    }
                 }
             }
         };
     }
 
+    private void getDisplacement() {
+        double deltay = currentLocation.getLatitude() - lastLocation.getLatitude();
+        double deltax = currentLocation.getLongitude() - lastLocation.getLongitude();
+        Log.d(TAG, "getDisplacement: [deltax deltay]: ["+deltax+" "+deltay+"]");
+        double angularCoef = deltay / deltax;
+        double angle = Math.toDegrees(Math.atan(angularCoef));
+        if (deltax < 0 && deltay > 0) {
+            angle = angle - 180;
+        }else if(deltax < 0 && deltay < 0){
+            angle = angle + 180;
+        }
+        while (angle < 0){
+            angle = angle + 360;
+        }
+        while (angle > 360) {
+            angle = angle - 360;
+        }
+        double disp = Math.hypot(deltax, deltay);
+        mDistance = measure(currentLocation.getLatitude(), currentLocation.getLongitude(), lastLocation.getLatitude(), lastLocation.getLongitude());
+        //Log.d(TAG, "getDisplacement: disp: "+disp+"; Angle: "+angle);
+        if (angle >= 337.5 || angle < 22.5) {
+            //Log.d(TAG, "getDisplacement: right");
+            mCanvasDrawing.move(CanvasDrawing.RIGHT);
+        } else {
+            if (angle >= 22.5 && angle < 67.5) {
+                //Log.d(TAG, "getDisplacement: upright");
+                mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
+            } else {
+                if (angle >= 67.5 && angle < 112.5) {
+                    //Log.d(TAG, "getDisplacement: up");
+                    mCanvasDrawing.move(CanvasDrawing.UP);
+                } else {
+                    if (angle >= 112.5 && angle < 157.5) {
+                        //Log.d(TAG, "getDisplacement: upleft");
+                        mCanvasDrawing.move(CanvasDrawing.UPLEFT);
+                    } else {
+                        if (angle >= 157.5 && angle < 202.5) {
+                            //Log.d(TAG, "getDisplacement: left");
+                            mCanvasDrawing.move(CanvasDrawing.LEFT);
+                        } else {
+                            if (angle >= 202.5 && angle < 247.5) {
+                                //Log.d(TAG, "getDisplacement: downleft");
+                                mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
+                            } else {
+                                if (angle >= 247.5 && angle < 292.5) {
+                                    //Log.d(TAG, "getDisplacement: down");
+                                    mCanvasDrawing.move(CanvasDrawing.DOWN);
+                                } else {
+                                    if (angle >= 292.5 && angle < 337.5) {
+                                        //Log.d(TAG, "getDisplacement: downright");
+                                        mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void onPause() {
         super.onPause();
+        // Stopping location updates
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        if(bluetoothDialog != null){
+            bluetoothDialog.dismiss();
+        }
     }
 
     @Override
@@ -256,8 +275,11 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
             ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
         }
+        // Starting location updates
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, null);
-
+        if(mBluetoothConnection.getmConnectedThread() != null){
+            mBluetoothConnection.write(RESUME_COMM_MSG.getBytes(Charset.defaultCharset()));
+        }
     }
 
     private boolean isLocationEnabled() {
@@ -266,8 +288,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     }
 
     private void showAlertLocation() {
-        final AlertDialog.Builder dialog = new AlertDialog.Builder(this.getContext());
-        dialog.setTitle("Enable Location")
+        final AlertDialog.Builder locationDialog = new AlertDialog.Builder(this.getContext());
+        locationDialog.setTitle("Enable Location")
                 .setMessage("Your Locations Settings is set to 'Off'.\nPlease Enable Location to " +
                         "use this app")
                 .setPositiveButton("Location Settings", new DialogInterface.OnClickListener() {
@@ -282,13 +304,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                     public void onClick(DialogInterface paramDialogInterface, int paramInt) {
                     }
                 });
-        dialog.show();
+        locationDialog.show();
     }
 
     private void showAlertBluetooth() {
         try {
             Log.d(TAG, "showAlertBluetooth: started");
-            alert = new AlertDialog.Builder(getActivity()).create();
+            bluetoothDialog = new AlertDialog.Builder(getActivity()).create();
             View mView = getLayoutInflater().inflate(R.layout.dialog_bluetooth_devices, null);
             listView = mView.findViewById(R.id.listviewBTdevices);
             mDeviceListAdapter = new DeviceListAdapter(getContext(), R.layout.array_list_item, mBTDevices);
@@ -297,13 +319,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             mView.findViewById(R.id.btn_dialogDispBTEncontrados).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    alert.dismiss();
+                    bluetoothDialog.dismiss();
                     getActivity().onBackPressed();
                 }
             });
-            alert.setView(mView);
-            alert.setCancelable(false);
-            alert.show();
+            bluetoothDialog.setView(mView);
+            bluetoothDialog.setCancelable(false);
+            bluetoothDialog.show();
             Log.d(TAG, "showAlertBluetooth: ended");
         } catch (Exception e) {
             e.printStackTrace();
@@ -313,30 +335,26 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     }
 
     protected void createLocationRequest() {
-        LocationRequest mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setFastestInterval(500);
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(INTERVAL);
+        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-
         if (isLocationEnabled()) {
             SupportMapFragment supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map2);
             supportMapFragment.getMapAsync(this);
-            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
+            //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
         } else {
             showAlertLocation();
         }
-
         TextView tv_status = getView().findViewById(R.id.tv_statusInspecao);
         tv_status.setText(R.string.inspStatusRunning);
         tv_BTStatus = getView().findViewById(R.id.tv_statusBt);
-
         mCanvasDrawing = getView().findViewById(R.id.canvas);
 
         Button up = getView().findViewById(R.id.up);
@@ -454,6 +472,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             try {
                 JSONObject jsonObject = new JSONObject(data);
                 Log.d(TAG, "onDataReceive: JSON: " + jsonObject);
+                //TODO:
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -468,8 +487,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
                     Log.d(TAG, "mBroadcastReceiverBond: BONDED");
-                    if (alert != null) {
-                        alert.dismiss();
+                    if (bluetoothDialog != null) {
+                        bluetoothDialog.dismiss();
                         String text = getString(R.string.BTStatusConnectedTo) + device.getName();
                         tv_BTStatus.setText(text);
                         mDevice = device;
@@ -518,7 +537,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 Log.d(TAG, "mBroadcastReceiverDiscover: started");
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                 mBTDevices.add(device);
-                if (alert == null) {
+                if (bluetoothDialog == null) {
                     showAlertBluetooth();
                 } else {
                     mDeviceListAdapter.notifyDataSetChanged();
@@ -581,8 +600,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         Log.d(TAG, "onItemClick: device address: "+deviceAddress);
         Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
         if(pairedDevices.size() > 0 && pairedDevices.contains(mBTDevices.get(i))){
-            if(alert!=null){
-                alert.dismiss();
+            if(bluetoothDialog !=null){
+                bluetoothDialog.dismiss();
                 String text = getString(R.string.BTStatusConnectedTo)+ deviceName;
                 tv_BTStatus.setText(text);
                 mDevice = mBTDevices.get(i);
