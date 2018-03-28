@@ -20,7 +20,7 @@ public class CanvasDrawing extends View {
     //private Rect newRect, oldRect;
     private ArrayList<Rect> points = new ArrayList<>();
     private ArrayList<Paint> paints = new ArrayList<>();
-    private final int SQUARE_SIZE = 10;
+    private final int SQUARE_SIZE = 5;
     private final int PADDING = 2;
     private boolean first = true;
     private int receivedIntensity;

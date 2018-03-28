@@ -31,4 +31,6 @@
     <string name="closeBTDevicesDialog">Fechar</string>
     <string name="BTStatusConnectedTo"> conectado a </string>
     <string name="geocoderFail">Google Geocoder failed! Please restart the app.</string>
+    <string name="encerrar_inspecao">Encerrar Inspeção</string>
+    <string name="dialog_save_inspecao_question">Deseja salvar o resultado da inspeção?</string>
 </resources>

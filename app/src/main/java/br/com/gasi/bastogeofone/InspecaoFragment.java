@@ -2,6 +2,7 @@ package br.com.gasi.bastogeofone;
 
 
 import android.Manifest;
+import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -11,9 +12,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -29,6 +32,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -54,6 +58,8 @@ import com.google.android.gms.tasks.Task;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Set;
@@ -92,6 +98,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     BluetoothDevice mDevice = null;
     private LocationCallback mLocationCallback;
     private float mDistance;
+    private boolean mInspecaoAtiva = false;
+    AlertDialog.Builder endDialog;
 
     private final String TAG = this.getClass().getSimpleName();
     private boolean isWaitingForResponse = false;
@@ -209,7 +217,9 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         };
     }
 
-    // Dummy method
+    /**
+     * Método dummy, utilizado para testes sem o recebimento de dados via Bluetooth
+     */
     private void getDisplacement() {
         double deltay = currentLocation.getLatitude() - lastLocation.getLatitude();
         double deltax = currentLocation.getLongitude() - lastLocation.getLongitude();
@@ -425,7 +435,6 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         if (isLocationEnabled()) {
             SupportMapFragment supportMapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map2);
             supportMapFragment.getMapAsync(this);
-            //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, minTime, minDistance, locationListener);
         } else {
             showAlertLocation();
         }
@@ -439,70 +448,16 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         tv_BTStatus = getView().findViewById(R.id.tv_statusBt);
         mCanvasDrawing = getView().findViewById(R.id.canvas);
 
-        Button up = getView().findViewById(R.id.up);
-        Button down = getView().findViewById(R.id.down);
-        Button left = getView().findViewById(R.id.left);
-        Button right = getView().findViewById(R.id.right);
-        Button upleft = getView().findViewById(R.id.upleft);
-        Button upright = getView().findViewById(R.id.upright);
-        Button downleft = getView().findViewById(R.id.downleft);
-        Button downright = getView().findViewById(R.id.downright);
+        Button endInspecao = getView().findViewById(R.id.btn_endInspecao);
 
-        up.setOnClickListener(new View.OnClickListener() {
+        endInspecao.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.UP);
+                encerrarInspecao();
             }
         });
 
-        down.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.DOWN);
-            }
-        });
 
-        left.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.LEFT);
-            }
-        });
-
-        right.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.RIGHT);
-            }
-        });
-
-        upleft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.UPLEFT);
-            }
-        });
-
-        upright.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.UPRIGHT);
-            }
-        });
-
-        downleft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.DOWNLEFT);
-            }
-        });
-
-        downright.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mCanvasDrawing.move(CanvasDrawing.DOWNRIGHT);
-            }
-        });
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -535,9 +490,69 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
 
     }
 
+    private void encerrarInspecao() {
+        endDialog = new AlertDialog.Builder(getActivity());
+        //View mView = getLayoutInflater().inflate(R.layout.dialog_save_inspecao, null);
+        endDialog.setCancelable(false);
+        endDialog.setTitle("Encerrando inspeção");
+        endDialog.setMessage("Deseja salvar os resultados da inspeção?");
+        endDialog.setPositiveButton(R.string.AlertYes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                saveCanvas();
+            }
+        }).setNegativeButton(R.string.AlertNo, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                //Todo
+
+            }
+        }).show();
+    }
+
+    private void saveCanvas() {
+        try{
+            View content = getView().findViewById(R.id.canvas);
+            content.setDrawingCacheEnabled(true);
+            content.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+            Bitmap bitmap = content.getDrawingCache();
+            String path = Environment.getExternalStorageDirectory().getAbsolutePath();
+            Log.d(TAG, "saveCanvas: path: "+path);
+            File root = new File(path+"/BastaoGeofone");
+            if(!root.exists()){
+                root.mkdir();
+            }
+            File file = new File(path+"/BastaoGeofone/image.jpeg");
+            FileOutputStream ostream;
+            try {
+                file.createNewFile();
+                ostream = new FileOutputStream(file);
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, ostream);
+                ostream.flush();
+                ostream.close();
+                Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+            }
+        }catch(NullPointerException err){
+            err.printStackTrace();
+        }
+
+    }
+
     BroadcastReceiver dataReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            mInspecaoAtiva = true;
+            try{
+                Button endInspecao = getView().findViewById(R.id.btn_endInspecao);
+                if (endInspecao != null){
+                    endInspecao.setEnabled(true);
+                }
+            }catch (NullPointerException e){
+                e.printStackTrace();
+            }
             String data = intent.getStringExtra("DATA");
             Log.d(TAG, "onReceive: data: "+data);
             try {
