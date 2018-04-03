@@ -59,9 +59,16 @@ public class CanvasDrawing extends View {
         super.onDraw(canvas);
         mCanvas = canvas;
         int width = canvas.getWidth();
+        int height = canvas.getHeight();
         int centerX = width / 2;
         int centerY = canvas.getHeight() / 2;
         if(first){
+            //painting the background white
+            Paint bg_paint = new Paint();
+            bg_paint.setStyle(Paint.Style.FILL);
+            bg_paint.setColor(Color.WHITE);
+            canvas.drawRect(0,0, width, height, bg_paint);
+            //painting the first square
             int left = centerX - (SQUARE_SIZE / 2);
             int top = centerY - (SQUARE_SIZE / 2);
             int bottom = top + SQUARE_SIZE;

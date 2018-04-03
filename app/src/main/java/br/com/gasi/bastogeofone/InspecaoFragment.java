@@ -527,7 +527,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             try {
                 file.createNewFile();
                 ostream = new FileOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, ostream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 ostream.flush();
                 ostream.close();
                 Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
