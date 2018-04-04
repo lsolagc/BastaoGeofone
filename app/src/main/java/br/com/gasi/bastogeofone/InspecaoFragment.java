@@ -55,13 +55,18 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.Charset;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -100,6 +105,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private float mDistance;
     private boolean mInspecaoAtiva = false;
     AlertDialog.Builder endDialog;
+    JSONArray coordValues;
+    SQLiteHelper sqLiteHelper = new SQLiteHelper(this.getContext());
 
     private final String TAG = this.getClass().getSimpleName();
     private boolean isWaitingForResponse = false;
@@ -302,6 +309,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         mDistance = measure(currentLocation.getLatitude(), currentLocation.getLongitude(), lastLocation.getLatitude(), lastLocation.getLongitude());
         Log.d(TAG, "getDisplacement: disp: "+mDistance+"; Angle: "+angle);
         if (mDistance > MINIMUM_DISTANCE) {
+            storeLatLngVal(currentLocation.getLatitude(), currentLocation.getLongitude(), receivedIntensity);
             if (angle >= 337.5 || angle < 22.5) {
                 //Log.d(TAG, "getDisplacement: right");
                 mCanvasDrawing.move(CanvasDrawing.RIGHT, receivedIntensity);
@@ -341,6 +349,18 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                     }
                 }
             }
+        }
+    }
+
+    private void storeLatLngVal(double latitude, double longitude, double receivedIntensity) {
+        JSONObject mJson = new JSONObject();
+        try {
+            mJson.put("lat",latitude);
+            mJson.put("lng",longitude);
+            mJson.put("val",receivedIntensity);
+            coordValues.put(mJson);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -500,6 +520,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 saveCanvas();
+                saveToSQLite();
             }
         }).setNegativeButton(R.string.AlertNo, new DialogInterface.OnClickListener() {
             @Override
@@ -508,6 +529,14 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
 
             }
         }).show();
+    }
+
+    private void saveToSQLite() {
+        DateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+        Date date = Calendar.getInstance().getTime();
+        String name = df.format(date);
+        //Criar a tabela da inspeção
+        sqLiteHelper.novaInspecao(name);
     }
 
     private void saveCanvas() {
