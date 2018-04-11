@@ -105,8 +105,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private float mDistance;
     private boolean mInspecaoAtiva = false;
     AlertDialog.Builder endDialog;
-    JSONArray coordValues;
-    SQLiteHelper sqLiteHelper = new SQLiteHelper(this.getContext());
+    JSONArray coordValues = new JSONArray();
+    SQLiteHelper sqLiteHelper;
 
     private final String TAG = this.getClass().getSimpleName();
     private boolean isWaitingForResponse = false;
@@ -123,6 +123,8 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_inspecao, container, false);
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getContext());
+
+        sqLiteHelper = new SQLiteHelper(this.getContext());
 
         createLocationRequest();
         createLocationCallback();
@@ -353,13 +355,14 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     }
 
     private void storeLatLngVal(double latitude, double longitude, double receivedIntensity) {
-        JSONObject mJson = new JSONObject();
         try {
+            JSONObject mJson = new JSONObject();
             mJson.put("lat",latitude);
             mJson.put("lng",longitude);
             mJson.put("val",receivedIntensity);
             coordValues.put(mJson);
-        } catch (JSONException e) {
+            Log.d(TAG, "storeLatLngVal: coordValues: "+coordValues);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -536,7 +539,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         Date date = Calendar.getInstance().getTime();
         String name = df.format(date);
         //Criar a tabela da inspeção
-        sqLiteHelper.novaInspecao(name);
+        sqLiteHelper.novaInspecao(name, coordValues);
     }
 
     private void saveCanvas() {
