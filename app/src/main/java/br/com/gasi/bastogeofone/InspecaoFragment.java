@@ -107,6 +107,7 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     AlertDialog.Builder endDialog;
     JSONArray coordValues = new JSONArray();
     SQLiteHelper sqLiteHelper;
+    String filename;
 
     private final String TAG = this.getClass().getSimpleName();
     private boolean isWaitingForResponse = false;
@@ -522,20 +523,27 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         endDialog.setPositiveButton(R.string.AlertYes, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                saveCanvas();
-                saveToSQLite();
+                try{
+                    saveCanvas();
+                    saveToSQLite();
+                    Toast.makeText(getContext(), "Inspeção salva sob o nome \""+filename+"\"", Toast.LENGTH_LONG).show();
+                    getActivity().onBackPressed();
+                    getActivity().onBackPressed();
+                }catch (Exception e){
+                    Toast.makeText(getContext(), "Ocorreu um erro ao salvar a inspeção. Mensagem de erro: "+e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
             }
         }).setNegativeButton(R.string.AlertNo, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                //Todo
-
+                getActivity().onBackPressed();
             }
         }).show();
     }
 
     private void saveToSQLite() {
-        DateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+        DateFormat df = new SimpleDateFormat("dd-MMM-yyyy H:mm");
         Date date = Calendar.getInstance().getTime();
         String name = df.format(date);
         //Criar a tabela da inspeção
@@ -551,10 +559,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             String path = Environment.getExternalStorageDirectory().getAbsolutePath();
             Log.d(TAG, "saveCanvas: path: "+path);
             File root = new File(path+"/BastaoGeofone");
+            DateFormat df = new SimpleDateFormat("dd-MMM-yyyy H:mm");
+            Date date = Calendar.getInstance().getTime();
+            filename = "Inspeção " + df.format(date);
             if(!root.exists()){
                 root.mkdir();
             }
-            File file = new File(path+"/BastaoGeofone/image.jpeg");
+            File file = new File(path+"/BastaoGeofone/"+filename+ ".jpeg");
             FileOutputStream ostream;
             try {
                 file.createNewFile();
@@ -562,10 +573,10 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 ostream.flush();
                 ostream.close();
-                Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
             } catch (Exception e) {
                 e.printStackTrace();
-                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
             }
         }catch(NullPointerException err){
             err.printStackTrace();
