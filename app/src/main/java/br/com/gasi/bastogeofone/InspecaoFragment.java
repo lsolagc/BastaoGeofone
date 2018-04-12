@@ -2,7 +2,6 @@ package br.com.gasi.bastogeofone;
 
 
 import android.Manifest;
-import android.app.Dialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -82,31 +81,32 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
     private static final String PAUSE_COMM_MSG = "STOP";
     private static final String RESUME_COMM_MSG = "SEND";
     private static final float MINIMUM_DISTANCE = (float) 0.5;
-    GoogleMap mGoogleMap;
-    CanvasDrawing mCanvasDrawing;
-    LocationManager locationManager;
-    long FASTEST_INTERVAL = 1000, INTERVAL = 2000;
-    Marker marker;
-    Location currentLocation, lastLocation;
-    FusedLocationProviderClient mFusedLocationClient;
-    SettingsClient mSettingsClient;
-    LocationRequest mLocationRequest;
-    Task<LocationSettingsResponse> task;
-    ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
-    DeviceListAdapter mDeviceListAdapter;
-    ListView listView;
-    BluetoothAdapter mBluetoothAdapter;
-    AlertDialog bluetoothDialog = null;
+    private GoogleMap mGoogleMap;
+    private CanvasDrawing mCanvasDrawing;
+    private LocationManager locationManager;
+    private long FASTEST_INTERVAL = 1000, INTERVAL = 2000;
+    private Marker marker;
+    private Location currentLocation, lastLocation;
+    private FusedLocationProviderClient mFusedLocationClient;
+    private SettingsClient mSettingsClient;
+    private LocationRequest mLocationRequest;
+    private Task<LocationSettingsResponse> task;
+    private ArrayList<BluetoothDevice> mBTDevices = new ArrayList<>();
+    private DeviceListAdapter mDeviceListAdapter;
+    private ListView listView;
+    private BluetoothAdapter mBluetoothAdapter;
+    private AlertDialog bluetoothDialog = null;
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    TextView tv_BTStatus;
-    BluetoothConnectionService mBluetoothConnection;
-    BluetoothDevice mDevice = null;
+    private TextView tv_BTStatus;
+    private BluetoothConnectionService mBluetoothConnection;
+    private BluetoothDevice mDevice = null;
     private LocationCallback mLocationCallback;
     private float mDistance;
     private boolean mInspecaoAtiva = false;
-    AlertDialog.Builder endDialog;
-    JSONArray coordValues = new JSONArray();
-    SQLiteHelper sqLiteHelper;
+    private AlertDialog.Builder endDialog;
+    private JSONArray coordValues = new JSONArray();
+    private SQLiteHelper sqLiteHelper;
+    private String filename;
 
     private final String TAG = this.getClass().getSimpleName();
     private boolean isWaitingForResponse = false;
@@ -522,20 +522,27 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
         endDialog.setPositiveButton(R.string.AlertYes, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                saveCanvas();
-                saveToSQLite();
+                try{
+                    saveCanvas();
+                    saveToSQLite();
+                    Toast.makeText(getContext(), "Inspeção salva sob o nome \""+filename+"\"", Toast.LENGTH_LONG).show();
+                    getActivity().onBackPressed();
+                    getActivity().onBackPressed();
+                }catch (Exception e){
+                    Toast.makeText(getContext(), "Ocorreu um erro ao salvar a inspeção. Mensagem de erro: "+e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
             }
         }).setNegativeButton(R.string.AlertNo, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                //Todo
-
+                getActivity().onBackPressed();
             }
         }).show();
     }
 
     private void saveToSQLite() {
-        DateFormat df = new SimpleDateFormat("dd-MMM-yyyy");
+        DateFormat df = new SimpleDateFormat("dd-MMM-yyyy H:mm");
         Date date = Calendar.getInstance().getTime();
         String name = df.format(date);
         //Criar a tabela da inspeção
@@ -551,10 +558,13 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
             String path = Environment.getExternalStorageDirectory().getAbsolutePath();
             Log.d(TAG, "saveCanvas: path: "+path);
             File root = new File(path+"/BastaoGeofone");
+            DateFormat df = new SimpleDateFormat("dd-MMM-yyyy H:mm");
+            Date date = Calendar.getInstance().getTime();
+            filename = "Inspeção " + df.format(date);
             if(!root.exists()){
                 root.mkdir();
             }
-            File file = new File(path+"/BastaoGeofone/image.jpeg");
+            File file = new File(path+"/BastaoGeofone/"+filename+ ".jpeg");
             FileOutputStream ostream;
             try {
                 file.createNewFile();
@@ -562,10 +572,10 @@ public class InspecaoFragment extends Fragment implements OnMapReadyCallback, Ad
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 ostream.flush();
                 ostream.close();
-                Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getContext(), "image saved", Toast.LENGTH_LONG).show();
             } catch (Exception e) {
                 e.printStackTrace();
-                Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getContext(), "error", Toast.LENGTH_LONG).show();
             }
         }catch(NullPointerException err){
             err.printStackTrace();

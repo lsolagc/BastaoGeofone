@@ -191,7 +191,7 @@ public class BluetoothConnectionService {
                             break;
                         }
                     }
-                    //Log.d(TAG, "run: InputStream: incomingMessage: " + incomingMessage);
+                    Log.d(TAG, "run: InputStream: incomingMessage: " + incomingMessage);
                     Intent incomingMessageIntent = new Intent("BastaoGeofoneIncomingData");
                     incomingMessageIntent.putExtra("DATA", incomingMessage);
                     LocalBroadcastManager.getInstance(mContext).sendBroadcast(incomingMessageIntent);

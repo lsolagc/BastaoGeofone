@@ -2,7 +2,6 @@ package br.com.gasi.bastogeofone;
 
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Address;
@@ -24,23 +23,20 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.Executor;
 
 
 /**
@@ -48,53 +44,32 @@ import java.util.concurrent.Executor;
  * Use the {@link novaInspecaoFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback, ActivityCompat.OnRequestPermissionsResultCallback {
+
+    private static final int PERMISSION_REQUEST_COARSE_LOCATION = 6514;
+    private static final int PERMISSION_REQUEST_FINE_LOCATION = 6515;
     private static final String TAG = "novaInspecaoFragment";
     private View rootView;
-    GoogleMap mGoogleMap;
-    MapView mMapView;
-    Location mLocation;
-    Context context = getContext();
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
+    private GoogleMap mGoogleMap;
+    private MapView mMapView;
+    private Location mLocation;
+    private Context context = getContext();
+    private Marker marker;
 
     public novaInspecaoFragment() {
         // Required empty public constructor
     }
 
     /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment novaInspecaoFragment.
+
      */
-    // TODO: Rename and change types and number of parameters
-    public static novaInspecaoFragment newInstance(String param1, String param2) {
-        novaInspecaoFragment fragment = new novaInspecaoFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
+    public static novaInspecaoFragment newInstance() {
+        return new novaInspecaoFragment();
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-
         final Context context = this.getContext();
         List<Address> addresses;
 
@@ -104,16 +79,14 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Log.i(TAG, "onCreate: getView(): " + getView());
-        Button btn_iniciarInspecao = (Button) getView().findViewById(R.id.button_iniciarInspecao);
+        Button btn_iniciarInspecao = getView().findViewById(R.id.button_iniciarInspecao);
         btn_iniciarInspecao.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 FragmentManager fm = getActivity().getSupportFragmentManager();
                 try {
                     fm.beginTransaction().addToBackStack(null).replace(R.id.flContent, InspecaoFragment.class.newInstance()).commit();
-                } catch (java.lang.InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
+                } catch (java.lang.InstantiationException | IllegalAccessException e) {
                     e.printStackTrace();
                 }
             }
@@ -139,6 +112,10 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
         mGoogleMap = googleMap;
         googleMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
         FusedLocationProviderClient mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this.getContext());
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, PERMISSION_REQUEST_COARSE_LOCATION);
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_FINE_LOCATION);
+        }
         mFusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this.getActivity(), new OnSuccessListener<Location>() {
                     @Override
@@ -164,7 +141,10 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
                                 nomeInspecao.setText(inspecaoName);
                                 enderecoInspecao.setText(addresses.get(0).getAddressLine(0));
                                 LatLng currentLocale = new LatLng(location.getLatitude(), location.getLongitude());
-                                googleMap.addMarker(new MarkerOptions().position(currentLocale).title("Localização atual"));
+                                if(marker != null){
+                                    marker.remove();
+                                }
+                                marker = googleMap.addMarker(new MarkerOptions().position(currentLocale).title("Localização atual"));
                                 CameraPosition cameraPosition = CameraPosition.builder().target(currentLocale).zoom(20).tilt(45).build();
                                 googleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
                             } catch (Exception e) {
@@ -181,4 +161,21 @@ public class novaInspecaoFragment extends Fragment implements OnMapReadyCallback
         });
 
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case PERMISSION_REQUEST_COARSE_LOCATION:
+                if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    this.getActivity().onBackPressed();
+                }
+                break;
+            case PERMISSION_REQUEST_FINE_LOCATION:
+                if (grantResults.length <= 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                    this.getActivity().onBackPressed();
+                }
+                break;
+        }
+    }
+
 }
