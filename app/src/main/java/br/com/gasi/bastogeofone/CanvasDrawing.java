@@ -15,6 +15,9 @@ import java.util.Random;
 
 public class CanvasDrawing extends View {
 
+    /**
+     * Declaração de variáveis
+     */
     private static final String TAG = CanvasDrawing.class.getSimpleName();
     private Canvas mCanvas;
     //private Rect newRect, oldRect;
